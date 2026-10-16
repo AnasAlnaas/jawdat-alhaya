@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Only the launcher name lives here; in-app text is in ui/Lang.kt so Arabic and English sit side by side. -->
+<resources>
+    <string name="app_name">Jawdat Al-Hayah</string>
+</resources>

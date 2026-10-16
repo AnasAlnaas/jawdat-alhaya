@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <cache-path name="share" path="share/" />
+    <!-- The camera app writes a new stage photo here; it is then copied into the app and deleted. -->
+    <cache-path name="camera" path="camera/" />
+</paths>
