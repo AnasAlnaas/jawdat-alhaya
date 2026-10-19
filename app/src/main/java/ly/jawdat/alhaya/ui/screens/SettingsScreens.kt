@@ -54,6 +54,7 @@ fun MoreScreen() {
                 Triple(R.drawable.ic_box, t("المخزون", "Stock"), Screen.Stock),
                 Triple(R.drawable.ic_chart, t("المصاريف", "Expenses"), Screen.Expenses),
                 Triple(R.drawable.ic_settings, t("الإعدادات والنسخ الاحتياطي", "Settings & backup"), Screen.Settings),
+                Triple(R.drawable.ic_help, t("دليل الاستخدام", "User guide"), Screen.Guide()),
             )
             entries.forEach { (icon, label, screen) ->
                 item {
@@ -84,7 +85,7 @@ fun SettingsScreen() {
     }
     val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> confirmRestore = uri }
 
-    AppScreen(t("الإعدادات", "Settings"), onBack = { Nav.back() }) { pad ->
+    AppScreen(t("الإعدادات", "Settings"), onBack = { Nav.back() }, help = GuideIds.SETTINGS) { pad ->
         FormBody(pad) {
             SectionTitle(t("اللغة", "Language"))
             ChipRow(listOf(true to "العربية", false to "English"), Lang.arabic) { Lang.set(it) }
@@ -151,7 +152,7 @@ fun StageTemplateScreen() {
     var newName by remember { mutableStateOf("") }
     fun save() { Prefs.stageTemplate = stages.toList() }
 
-    AppScreen(t("المراحل الافتراضية", "Default stages"), onBack = { Nav.back() }) { pad ->
+    AppScreen(t("المراحل الافتراضية", "Default stages"), onBack = { Nav.back() }, help = GuideIds.SETTINGS) { pad ->
         FormBody(pad) {
             Text(
                 t(

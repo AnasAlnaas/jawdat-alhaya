@@ -49,6 +49,7 @@ To update later, open the new APK the same way; her data stays.
 | `reminders/` | Daily check (09:00–10:00 by default) for stages whose "check on" date has come |
 | `util/Files.kt` | QR labels, PDF report, Excel (CSV) export, backup/restore, photos |
 | `ui/Lang.kt` | Arabic/English text helper `t("عربي", "English")` |
+| `ui/screens/GuideContent.kt` | The user guide text (one section per area; ids used by the "?" buttons) |
 | `ui/screens/` | The screens |
 
 ## Money rules
@@ -60,4 +61,5 @@ To update later, open the new APK the same way; her data stays.
 
 ## Versions
 
+- **1.1.0** (2026-10-16) — in-app user guide (searchable, one section per screen, "?" button on every screen), first-launch welcome tour, user guide in the More menu.
 - **1.0.0** (2026-10-16) — first release.

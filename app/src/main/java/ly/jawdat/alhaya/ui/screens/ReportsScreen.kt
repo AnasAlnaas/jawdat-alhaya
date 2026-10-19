@@ -69,7 +69,7 @@ fun ReportsScreen() {
     }
     val r = watch(period) { Reports.build(period) }
 
-    AppScreen(title = t("التقارير", "Reports")) { pad ->
+    AppScreen(title = t("التقارير", "Reports"), help = GuideIds.REPORTS) { pad ->
         ListBody(pad) {
             item {
                 ChipRow(

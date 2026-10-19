@@ -40,6 +40,11 @@ object Prefs {
         return base.dropLast(1) + herbStage + base.last()
     }
 
+    /** The welcome tour shows once, on first launch. */
+    var seenWelcome: Boolean
+        get() = sp.getBoolean("seen_welcome", false)
+        set(v) = sp.edit().putBoolean("seen_welcome", v).apply()
+
     var reminderHour: Int
         get() = sp.getInt("reminder_hour", 9)
         set(v) = sp.edit().putInt("reminder_hour", v).apply()

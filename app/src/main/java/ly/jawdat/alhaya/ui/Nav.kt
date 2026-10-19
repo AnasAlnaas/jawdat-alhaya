@@ -29,6 +29,10 @@ sealed interface Screen {
     data class ExpenseEdit(val id: Long = 0) : Screen
     data object Settings : Screen
     data object StageTemplate : Screen
+
+    // Help
+    data class Guide(val section: String? = null) : Screen
+    data object Welcome : Screen
 }
 
 val tabs = listOf(Screen.Home, Screen.Batches, Screen.Sales, Screen.Reports, Screen.More)

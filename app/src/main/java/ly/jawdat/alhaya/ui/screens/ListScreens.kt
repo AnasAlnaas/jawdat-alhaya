@@ -74,6 +74,7 @@ fun ProductsScreen() {
     var adjusting by remember { mutableStateOf<Product?>(null) }
     AppScreen(
         title = t("المنتجات والأسعار", "Products & prices"),
+        help = GuideIds.PRODUCTS,
         onBack = { Nav.back() },
         actions = {
             IconButton(onClick = { Files.shareText(context, priceList(products.filter { !it.archived })) }) { Ic(R.drawable.ic_share) }
@@ -158,7 +159,7 @@ fun ProductEditScreen(id: Long) {
     var confirmDelete by remember { mutableStateOf(false) }
     val used = remember(id) { id != 0L && Repo.productIsUsed(id) }
 
-    AppScreen(if (id == 0L) t("منتج جديد", "New product") else t("تعديل المنتج", "Edit product"), onBack = { Nav.back() }) { pad ->
+    AppScreen(if (id == 0L) t("منتج جديد", "New product") else t("تعديل المنتج", "Edit product"), onBack = { Nav.back() }, help = GuideIds.PRODUCTS) { pad ->
         FormBody(pad) {
             PickField(t("النوع", "Type"), herbOptions, herb, {
                 // Keep the suggested name in step with the type, unless it was typed by hand.
@@ -204,6 +205,7 @@ fun StockScreen() {
     var adjusting by remember { mutableStateOf<Material?>(null) }
     AppScreen(
         title = t("المخزون", "Stock"),
+        help = GuideIds.STOCK,
         onBack = { Nav.back() },
         fab = { ExtendedFloatingActionButton(onClick = { editing = Material(name = "") }, icon = { Ic(R.drawable.ic_add) }, text = { Text(t("مادة جديدة", "New material")) }) },
     ) { pad ->
@@ -313,6 +315,7 @@ fun ExpensesScreen() {
     }
     AppScreen(
         title = t("المصاريف", "Expenses"),
+        help = GuideIds.EXPENSES,
         onBack = { Nav.back() },
         fab = { ExtendedFloatingActionButton(onClick = { Nav.go(Screen.ExpenseEdit()) }, icon = { Ic(R.drawable.ic_add) }, text = { Text(t("مصروف جديد", "New expense")) }) },
     ) { pad ->
@@ -352,6 +355,7 @@ fun ExpenseEditScreen(id: Long) {
     val a = parseNum(amount) ?: 0.0
     AppScreen(
         if (id == 0L) t("مصروف جديد", "New expense") else t("تعديل المصروف", "Edit expense"),
+        help = GuideIds.EXPENSES,
         onBack = { Nav.back() },
         actions = { if (id != 0L) IconButton(onClick = { confirmDelete = true }) { Ic(R.drawable.ic_delete) } },
     ) { pad ->

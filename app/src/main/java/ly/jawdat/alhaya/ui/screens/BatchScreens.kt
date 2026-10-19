@@ -91,6 +91,7 @@ fun BatchesScreen() {
     val shown = all.filter { filter == "all" || it.batch.status == filter }
     AppScreen(
         title = t("الإنتاج", "Production"),
+        help = GuideIds.BATCHES,
         fab = {
             ExtendedFloatingActionButton(
                 onClick = { Nav.go(Screen.NewBatch) },
@@ -176,7 +177,7 @@ fun NewBatchScreen() {
     val stages = remember { mutableStateListOf<Pair<String, Boolean>>().apply { addAll(Prefs.stageTemplate.map { it to true }) } }
     var newStage by remember { mutableStateOf("") }
 
-    AppScreen(t("دفعة جديدة", "New batch"), onBack = { Nav.back() }) { pad ->
+    AppScreen(t("دفعة جديدة", "New batch"), onBack = { Nav.back() }, help = GuideIds.BATCHES) { pad ->
         FormBody(pad) {
             Field(t("رقم الدفعة", "Batch number"), code, { code = it })
             Field(t("اسم أو وصف (اختياري)", "Name or note (optional)"), name, { name = it }, supporting = t("مثال: تمر دقلة 20 كجم", "e.g. Deglet dates 20 kg"))
@@ -242,6 +243,7 @@ fun BatchDetailScreen(id: Long) {
 
     AppScreen(
         title = b.label,
+        help = GuideIds.BATCHES,
         onBack = { Nav.back() },
         actions = {
             IconButton(onClick = {

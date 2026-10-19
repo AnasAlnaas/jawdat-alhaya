@@ -55,6 +55,7 @@ fun HomeScreen() {
 
     AppScreen(
         title = t("جودة الحياة", "Jawdat Al-Hayah"),
+        help = GuideIds.HOME,
         actions = {
             Image(painterResource(R.drawable.logo), null, Modifier.padding(end = 12.dp).height(44.dp))
         },
@@ -156,6 +157,9 @@ fun HomeScreen() {
                         ),
                         style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 6.dp),
                     )
+                    androidx.compose.material3.TextButton(onClick = { Nav.go(Screen.Guide(GuideIds.START)) }) {
+                        Text(t("اقرأ دليل الاستخدام", "Read the user guide"))
+                    }
                 }
             }
         }

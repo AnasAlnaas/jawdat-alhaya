@@ -107,6 +107,7 @@ fun StageDetailScreen(id: Long) {
 
     AppScreen(
         title = st.name,
+        help = GuideIds.STAGES,
         onBack = { Nav.back() },
         actions = {
             IconButton(onClick = { menu = true }) { Ic(R.drawable.ic_settings) }

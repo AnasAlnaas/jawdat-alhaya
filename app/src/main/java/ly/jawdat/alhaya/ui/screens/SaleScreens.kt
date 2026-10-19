@@ -76,6 +76,7 @@ fun SalesScreen() {
     }
     AppScreen(
         title = t("المبيعات", "Sales"),
+        help = GuideIds.SALES,
         fab = {
             ExtendedFloatingActionButton(
                 onClick = { Nav.go(Screen.SaleEdit()) },
@@ -192,6 +193,7 @@ fun SaleEditScreen(id: Long, presetMarket: Long?) {
 
     AppScreen(
         title = if (id == 0L) t("بيع جديد", "New sale") else t("تعديل البيع", "Edit sale"),
+        help = GuideIds.SALES,
         onBack = { Nav.back() },
         actions = {
             if (id != 0L) IconButton(onClick = { confirmDelete = true }) { Ic(R.drawable.ic_delete) }

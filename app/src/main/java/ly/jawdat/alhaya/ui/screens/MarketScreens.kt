@@ -67,6 +67,7 @@ fun MarketsScreen() {
     val bought = views.groupBy { it.sale.marketId }.mapValues { (_, l) -> l.sumOf { it.sale.total } }
     AppScreen(
         title = t("المحلات", "Markets"),
+        help = GuideIds.MARKETS,
         onBack = { Nav.back() },
         fab = {
             ExtendedFloatingActionButton(onClick = { Nav.go(Screen.MarketEdit()) }, icon = { Ic(R.drawable.ic_add) }, text = { Text(t("محل جديد", "New market")) })
@@ -115,6 +116,7 @@ fun MarketDetailScreen(id: Long) {
 
     AppScreen(
         title = m.name,
+        help = GuideIds.MARKETS,
         onBack = { Nav.back() },
         actions = { IconButton(onClick = { Nav.go(Screen.MarketEdit(id)) }) { Ic(R.drawable.ic_edit) } },
         fab = {
@@ -227,7 +229,7 @@ fun MarketEditScreen(id: Long) {
     var confirmDelete by remember { mutableStateOf(false) }
     val used = remember(id) { id != 0L && Repo.marketIsUsed(id) }
 
-    AppScreen(if (id == 0L) t("محل جديد", "New market") else t("تعديل المحل", "Edit market"), onBack = { Nav.back() }) { pad ->
+    AppScreen(if (id == 0L) t("محل جديد", "New market") else t("تعديل المحل", "Edit market"), onBack = { Nav.back() }, help = GuideIds.MARKETS) { pad ->
         FormBody(pad) {
             Field(t("اسم المحل", "Market name"), name, { name = it })
             Field(t("الهاتف", "Phone"), phone, { phone = it }, phone = true)

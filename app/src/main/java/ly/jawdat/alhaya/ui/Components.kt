@@ -91,6 +91,8 @@ fun AppScreen(
     onBack: (() -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
     fab: @Composable () -> Unit = {},
+    /** Guide section opened by the "?" button; null hides the button. */
+    help: String? = null,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     Scaffold(
@@ -100,7 +102,10 @@ fun AppScreen(
                 navigationIcon = {
                     if (onBack != null) IconButton(onClick = onBack) { Ic(R.drawable.ic_back, mirror = true) }
                 },
-                actions = actions,
+                actions = {
+                    if (help != null) IconButton(onClick = { Nav.go(Screen.Guide(help)) }) { Ic(R.drawable.ic_help) }
+                    actions()
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background),
             )
         },
@@ -112,8 +117,13 @@ fun AppScreen(
 
 /** A scrolling list with standard spacing, used by most screens. */
 @Composable
-fun ListBody(padding: PaddingValues, content: LazyListScope.() -> Unit) {
+fun ListBody(
+    padding: PaddingValues,
+    state: androidx.compose.foundation.lazy.LazyListState = androidx.compose.foundation.lazy.rememberLazyListState(),
+    content: LazyListScope.() -> Unit,
+) {
     LazyColumn(
+        state = state,
         modifier = Modifier.fillMaxSize().padding(padding),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),

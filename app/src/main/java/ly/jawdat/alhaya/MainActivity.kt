@@ -24,6 +24,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
+import ly.jawdat.alhaya.data.Prefs
 import ly.jawdat.alhaya.ui.Ic
 import ly.jawdat.alhaya.ui.JawdatTheme
 import ly.jawdat.alhaya.ui.Lang
@@ -33,6 +34,8 @@ import ly.jawdat.alhaya.ui.screens.BatchDetailScreen
 import ly.jawdat.alhaya.ui.screens.BatchesScreen
 import ly.jawdat.alhaya.ui.screens.ExpenseEditScreen
 import ly.jawdat.alhaya.ui.screens.ExpensesScreen
+import ly.jawdat.alhaya.ui.screens.GuideScreen
+import ly.jawdat.alhaya.ui.screens.WelcomeScreen
 import ly.jawdat.alhaya.ui.screens.HomeScreen
 import ly.jawdat.alhaya.ui.screens.MarketDetailScreen
 import ly.jawdat.alhaya.ui.screens.MarketEditScreen
@@ -55,6 +58,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (savedInstanceState == null && !Prefs.seenWelcome && Nav.current != Screen.Welcome) Nav.go(Screen.Welcome)
         openFromIntent(intent)
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
@@ -115,6 +119,8 @@ private fun Root() {
                 is Screen.ExpenseEdit -> ExpenseEditScreen(screen.id)
                 Screen.Settings -> SettingsScreen()
                 Screen.StageTemplate -> StageTemplateScreen()
+                is Screen.Guide -> GuideScreen(screen.section)
+                Screen.Welcome -> WelcomeScreen()
             }
         }
         if (showBar) BottomBar()
