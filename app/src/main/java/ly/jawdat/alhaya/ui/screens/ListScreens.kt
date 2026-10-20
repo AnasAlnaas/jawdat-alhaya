@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -29,6 +31,7 @@ import ly.jawdat.alhaya.data.ExpenseCategory
 import ly.jawdat.alhaya.data.Herb
 import ly.jawdat.alhaya.data.Material
 import ly.jawdat.alhaya.data.Product
+import ly.jawdat.alhaya.data.ProductSize
 import ly.jawdat.alhaya.data.Repo
 import ly.jawdat.alhaya.logic.Period
 import ly.jawdat.alhaya.logic.Reports
@@ -42,6 +45,8 @@ import ly.jawdat.alhaya.ui.DateField
 import ly.jawdat.alhaya.ui.EmptyState
 import ly.jawdat.alhaya.ui.Field
 import ly.jawdat.alhaya.ui.FormBody
+import ly.jawdat.alhaya.ui.HerbPicker
+import ly.jawdat.alhaya.ui.SizePicker
 import ly.jawdat.alhaya.ui.Good
 import ly.jawdat.alhaya.ui.Ic
 import ly.jawdat.alhaya.ui.KeyValue
@@ -60,6 +65,7 @@ import ly.jawdat.alhaya.ui.money
 import ly.jawdat.alhaya.ui.num
 import ly.jawdat.alhaya.ui.parseNum
 import ly.jawdat.alhaya.ui.t
+import ly.jawdat.alhaya.ui.title
 import ly.jawdat.alhaya.ui.watch
 import ly.jawdat.alhaya.util.Files
 import java.time.LocalDate
@@ -85,7 +91,7 @@ fun ProductsScreen() {
             if (products.isEmpty()) item {
                 EmptyState(
                     t("لا توجد منتجات بعد", "No products yet"),
-                    t("أضف كل نوع وحجم بسعره، مثل: خل التمر بالزعتر 500 مل.", "Add each type and size with its price, e.g. Date vinegar with thyme 500 ml."),
+                    t("أضف كل نوع وحجم بسعره، مثل: خل التمر بالزعتر 330 مل.", "Add each type and size with its price, e.g. Date vinegar with thyme 330 ml."),
                 )
             }
             if (products.isNotEmpty()) item {
@@ -95,7 +101,7 @@ fun ProductsScreen() {
                 AppCard(onClick = { Nav.go(Screen.ProductEdit(p.id)) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
-                            Text("${p.name} ${p.size}".trim() + if (p.archived) t(" (مؤرشف)", " (archived)") else "", style = MaterialTheme.typography.titleSmall)
+                            Text(p.title + if (p.archived) t(" (مؤرشف)", " (archived)") else "", style = MaterialTheme.typography.titleSmall)
                             Text(herbName(p.herb), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.secondary)
                         }
                         Text(money(p.price), style = MaterialTheme.typography.titleSmall)
@@ -129,7 +135,7 @@ private fun priceList(products: List<Product>): String = buildString {
     appendLine(t("🌿 جودة الحياة — منتجات طبيعية بأيدٍ ليبية", "🌿 Jawdat Al-Hayah — natural products made in Libya"))
     appendLine(t("قائمة الأسعار:", "Price list:"))
     products.groupBy { it.herb }.forEach { (_, list) ->
-        list.forEach { appendLine("• ${it.name} ${it.size}".trim() + " — " + money(it.price)) }
+        list.forEach { appendLine("• ${it.title}" + " — " + money(it.price)) }
     }
     appendLine()
     append(t("للطلب: 091-3390662", "To order: 091-3390662"))
@@ -151,7 +157,7 @@ fun ProductEditScreen(id: Long) {
     val existing = remember(id) { if (id != 0L) Repo.product(id) else null }
     var name by rememberSaveable { mutableStateOf(existing?.name ?: suggestedName(Herb.PLAIN)) }
     var herb by rememberSaveable { mutableStateOf(existing?.herb ?: Herb.PLAIN) }
-    var size by rememberSaveable { mutableStateOf(existing?.size ?: "") }
+    var size by rememberSaveable { mutableStateOf(existing?.size ?: ProductSize.SMALL) }
     var price by rememberSaveable { mutableStateOf(existing?.price?.let { num(it) } ?: "") }
     var stock by rememberSaveable { mutableStateOf(existing?.stock?.toString() ?: "") }
     var low by rememberSaveable { mutableStateOf(existing?.lowStock?.toString() ?: "5") }
@@ -161,13 +167,13 @@ fun ProductEditScreen(id: Long) {
 
     AppScreen(if (id == 0L) t("منتج جديد", "New product") else t("تعديل المنتج", "Edit product"), onBack = { Nav.back() }, help = GuideIds.PRODUCTS) { pad ->
         FormBody(pad) {
-            PickField(t("النوع", "Type"), herbOptions, herb, {
+            HerbPicker(herb) {
                 // Keep the suggested name in step with the type, unless it was typed by hand.
                 if (name.isBlank() || name == suggestedName(herb)) name = suggestedName(it)
                 herb = it
-            })
+            }
             Field(t("اسم المنتج", "Product name"), name, { name = it })
-            Field(t("الحجم", "Size"), size, { size = it }, supporting = t("مثال: 500 مل، 1 لتر", "e.g. 500 ml, 1 L"))
+            SizePicker(size) { size = it }
             Field(t("سعر البيع للقارورة (د.ل)", "Selling price per bottle (LYD)"), price, { price = it }, number = true)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Field(t("المخزون الحالي", "Current stock"), stock, { stock = it }, Modifier.weight(1f), number = true)
@@ -195,6 +201,40 @@ fun ProductEditScreen(id: Long) {
     if (confirmDelete) ConfirmDialog(t("حذف المنتج؟", "Delete product?"), name, t("حذف", "Delete"), { Repo.deleteProduct(id); Nav.back() }, { confirmDelete = false })
 }
 
+/**
+ * A short product form in a dialog, so a sale or a bottling can add a missing product without
+ * leaving the screen. Stock starts at 0; a sale adds the bottles it needs.
+ */
+@Composable
+fun QuickProductDialog(defaultHerb: String = Herb.PLAIN, onDone: () -> Unit, onCreated: (Long) -> Unit) {
+    var herb by remember { mutableStateOf(defaultHerb) }
+    var name by remember { mutableStateOf(suggestedName(defaultHerb)) }
+    var size by remember { mutableStateOf(ProductSize.SMALL) }
+    var price by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDone,
+        title = { Text(t("منتج جديد", "New product")) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                HerbPicker(herb) {
+                    if (name.isBlank() || name == suggestedName(herb)) name = suggestedName(it)
+                    herb = it
+                }
+                Field(t("اسم المنتج", "Product name"), name, { name = it })
+                SizePicker(size) { size = it }
+                Field(t("سعر البيع للقارورة (د.ل)", "Selling price per bottle (LYD)"), price, { price = it }, number = true)
+            }
+        },
+        confirmButton = {
+            TextButton(enabled = name.isNotBlank(), onClick = {
+                onCreated(Repo.saveProduct(Product(name = name, herb = herb, size = size, price = parseNum(price) ?: 0.0, lowStock = 5)))
+                onDone()
+            }) { Text(t("حفظ", "Save")) }
+        },
+        dismissButton = { TextButton(onClick = onDone) { Text(t("إلغاء", "Cancel")) } },
+    )
+}
+
 // ---------- Raw stock (materials) ----------
 
 @Composable
@@ -215,7 +255,7 @@ fun StockScreen() {
                 AppCard {
                     if (products.isEmpty()) Text(t("لا توجد منتجات.", "No products."), color = MaterialTheme.colorScheme.onSurfaceVariant)
                     products.forEach { p ->
-                        KeyValue("${p.name} ${p.size}".trim(), p.stock.toString(), valueColor = if (p.stock <= p.lowStock) Warn else MaterialTheme.colorScheme.onSurface)
+                        KeyValue(p.title, p.stock.toString(), valueColor = if (p.stock <= p.lowStock) Warn else MaterialTheme.colorScheme.onSurface)
                     }
                     if (products.isNotEmpty()) {
                         KeyValue(t("المجموع", "Total"), products.sumOf { it.stock }.toString(), bold = true)

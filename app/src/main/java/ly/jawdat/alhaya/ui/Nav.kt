@@ -43,11 +43,17 @@ object Nav {
 
     val current: Screen get() = stack.last()
 
+    /** Which way the last move went, for the screen animation: 1 forward, -1 back, 0 a tab switch. */
+    var direction = 0
+        private set
+
     fun go(s: Screen) {
+        direction = 1
         stack.add(s)
     }
 
     fun back(): Boolean {
+        direction = -1
         if (stack.size > 1) {
             stack.removeAt(stack.lastIndex)
             return true
@@ -60,12 +66,14 @@ object Nav {
     }
 
     fun tab(s: Screen) {
+        direction = 0
         stack.clear()
         stack.add(s)
     }
 
     /** Replace the current screen (e.g. after creating a batch, open it instead of the form). */
     fun replace(s: Screen) {
+        direction = 0
         stack[stack.lastIndex] = s
     }
 }

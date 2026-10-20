@@ -1,7 +1,24 @@
 package ly.jawdat.alhaya.ui
 
 import androidx.annotation.DrawableRes
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -46,6 +63,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +74,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -148,11 +167,22 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
     )
 }
 
+/** A rounded card that slides softly into place when it appears and dips a little when pressed. */
 @Composable
 fun AppCard(onClick: (() -> Unit)? = null, color: Color? = null, content: @Composable ColumnScope.() -> Unit) {
     val colors = CardDefaults.cardColors(containerColor = color ?: MaterialTheme.colorScheme.surfaceContainer)
-    val mod = Modifier.fillMaxWidth()
-    if (onClick != null) Card(onClick = onClick, modifier = mod, colors = colors, shape = RoundedCornerShape(16.dp)) {
+    val appear = remember { Animatable(0f) }
+    LaunchedEffect(Unit) { appear.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val press by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.6f), label = "press")
+    val mod = Modifier.fillMaxWidth().graphicsLayer {
+        alpha = appear.value
+        translationY = (1f - appear.value) * 18.dp.toPx()
+        scaleX = press
+        scaleY = press
+    }
+    if (onClick != null) Card(onClick = onClick, modifier = mod, colors = colors, shape = RoundedCornerShape(16.dp), interactionSource = interaction) {
         Column(Modifier.padding(14.dp), content = content)
     } else Card(modifier = mod, colors = colors, shape = RoundedCornerShape(16.dp)) {
         Column(Modifier.padding(14.dp), content = content)
@@ -167,7 +197,13 @@ fun StatTile(label: String, value: String, modifier: Modifier = Modifier, color:
     ) {
         Column(Modifier.padding(12.dp)) {
             Text(label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(value, style = MaterialTheme.typography.titleLarge, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            AnimatedContent(
+                value,
+                transitionSpec = { (slideInVertically { it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut()) },
+                label = "stat",
+            ) { v ->
+                Text(v, style = MaterialTheme.typography.titleLarge, color = color, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
             if (note != null) Text(note, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
         }
     }
@@ -199,8 +235,10 @@ fun BarRow(label: String, value: Double, max: Double, valueText: String, color: 
         }
         Spacer(Modifier.height(4.dp))
         Box(Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(4.dp)).background(MaterialTheme.colorScheme.surfaceVariant)) {
-            val f = if (max > 0) (value / max).toFloat().coerceIn(0f, 1f) else 0f
-            if (f > 0f) Box(Modifier.fillMaxWidth(f).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(color))
+            val target = if (max > 0) (value / max).toFloat().coerceIn(0f, 1f) else 0f
+            val grow = remember { Animatable(0f) }
+            LaunchedEffect(target) { grow.animateTo(target, tween(800, easing = FastOutSlowInEasing)) }
+            if (grow.value > 0f) Box(Modifier.fillMaxWidth(grow.value).fillMaxHeight().clip(RoundedCornerShape(4.dp)).background(color))
         }
     }
 }
@@ -209,10 +247,17 @@ fun BarRow(label: String, value: Double, max: Double, valueText: String, color: 
 @Composable
 fun ColumnChart(values: List<Double>, labels: List<String>, height: Dp = 120.dp) {
     val max = values.maxOrNull() ?: 0.0
+    val grow = remember { Animatable(0f) }
+    LaunchedEffect(values) {
+        grow.snapTo(0f)
+        grow.animateTo(1f, tween(900, easing = FastOutSlowInEasing))
+    }
     Row(Modifier.fillMaxWidth().height(height + 18.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.Bottom) {
         values.forEachIndexed { i, v ->
             Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
-                val f = if (max > 0) (v / max).toFloat() else 0f
+                // Columns rise one after another, left to right.
+                val delayed = ((grow.value * 1.5f) - i.toFloat() / values.size.coerceAtLeast(1) * 0.5f).coerceIn(0f, 1f)
+                val f = if (max > 0) (v / max).toFloat() * delayed else 0f
                 Box(
                     Modifier.fillMaxWidth().height(height * f.coerceAtLeast(0.02f))
                         .clip(RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp))
@@ -359,7 +404,13 @@ fun ConfirmDialog(title: String, text: String, confirm: String, onConfirm: () ->
 
 @Composable
 fun EmptyState(text: String, hint: String? = null) {
-    Column(Modifier.fillMaxWidth().padding(vertical = 40.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxWidth().padding(vertical = 32.dp, horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        // A nearly empty bottle bobbing gently.
+        val bob by rememberInfiniteTransition(label = "bob").animateFloat(
+            -4f, 4f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "y",
+        )
+        Bottle(Modifier.width(34.dp).height(70.dp).graphicsLayer { translationY = bob.dp.toPx() }, 0.15f, large = true)
+        Spacer(Modifier.height(14.dp))
         Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (hint != null) {
             Spacer(Modifier.height(6.dp))

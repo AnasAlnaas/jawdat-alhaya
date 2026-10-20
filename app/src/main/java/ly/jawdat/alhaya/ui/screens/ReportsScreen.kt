@@ -2,6 +2,7 @@ package ly.jawdat.alhaya.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.ui.Alignment
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -29,6 +30,7 @@ import ly.jawdat.alhaya.ui.Danger
 import ly.jawdat.alhaya.ui.DateField
 import ly.jawdat.alhaya.ui.DateBrown
 import ly.jawdat.alhaya.ui.Divider
+import ly.jawdat.alhaya.ui.GiftIcon
 import ly.jawdat.alhaya.ui.Good
 import ly.jawdat.alhaya.ui.Ic
 import ly.jawdat.alhaya.ui.KeyValue
@@ -48,6 +50,7 @@ import ly.jawdat.alhaya.ui.num
 import ly.jawdat.alhaya.ui.pct
 import ly.jawdat.alhaya.ui.relative
 import ly.jawdat.alhaya.ui.t
+import ly.jawdat.alhaya.ui.title
 import ly.jawdat.alhaya.ui.watch
 import ly.jawdat.alhaya.util.Files
 import java.time.LocalDate
@@ -149,11 +152,29 @@ fun ReportsScreen() {
                     KeyValue(t("صافي الربح", "Net profit"), money(r.netProfit), if (r.netProfit < 0) Danger else Good, bold = true)
                     if (r.revenue > 0) KeyValue(t("هامش الربح", "Profit margin"), pct(r.netProfit / r.revenue * 100))
                     Divider()
-                    KeyValue(t("تكلفة القوارير المباعة (تقديري)", "Cost of bottles sold (est.)"), money(r.costOfGoodsSold))
+                    KeyValue(
+                        if (r.giftUnits > 0) t("تكلفة القوارير المباعة والمهداة (تقديري)", "Cost of bottles sold & given (est.)") else t("تكلفة القوارير المباعة (تقديري)", "Cost of bottles sold (est.)"),
+                        money(r.costOfGoodsSold),
+                    )
                     KeyValue(t("الربح على المبيعات", "Profit on sales"), money(r.grossProfit))
                     KeyValue(t("التدفق النقدي (المستلم − المصروف)", "Cash flow (received − spent)"), money(r.cashFlow))
                     Text(
                         t("صافي الربح يقارن ما بعته بما صرفته في الفترة. الربح على المبيعات يستخدم تكلفة القارورة من الدفعات المنتهية.", "Net profit compares what you sold with what you spent in the period. Profit on sales uses the cost per bottle from finished batches."),
+                        style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+            if (r.giftUnits > 0) item {
+                AppCard(color = Leaf.copy(alpha = 0.12f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        GiftIcon()
+                        Text("  " + t("الهدايا", "Gifts"), style = MaterialTheme.typography.titleSmall)
+                    }
+                    KeyValue(t("قوارير مهداة", "Bottles given"), r.giftUnits.toString(), bold = true)
+                    KeyValue(t("تكلفتها (تقديري)", "Their cost (est.)"), if (r.costPerBottle.isEmpty()) "—" else money(r.giftCost))
+                    KeyValue(t("قيمتها بسعر البيع", "Value at selling price"), money(r.giftValue))
+                    Text(
+                        t("تكلفة الهدايا محسوبة ضمن «تكلفة القوارير» و«الربح على المبيعات»، ولا تدخل في الإيرادات.", "Gift costs are included in \"cost of bottles\" and \"profit on sales\", and are not counted as revenue."),
                         style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -215,7 +236,7 @@ fun ReportsScreen() {
                     AppCard {
                         if (r.slowProducts.isNotEmpty()) {
                             Text(t("منتجات لم تُبع في هذه الفترة", "Products not sold in this period"), style = MaterialTheme.typography.labelLarge)
-                            r.slowProducts.forEach { Text("• ${it.name} ${it.size}".trim(), style = MaterialTheme.typography.bodyMedium) }
+                            r.slowProducts.forEach { Text("• ${it.title}", style = MaterialTheme.typography.bodyMedium) }
                         }
                         if (r.quietMarkets.isNotEmpty()) {
                             if (r.slowProducts.isNotEmpty()) Divider()
@@ -280,7 +301,7 @@ fun ReportsScreen() {
                 AppCard {
                     KeyValue(t("قوارير جاهزة", "Bottles ready"), r.bottlesInStock.toString(), bold = true)
                     KeyValue(t("قيمتها بسعر البيع", "Value at selling price"), money(r.stockValue))
-                    r.lowProducts.forEach { KeyValue("⚠ ${it.name} ${it.size}".trim(), it.stock.toString(), Warn) }
+                    r.lowProducts.forEach { KeyValue("⚠ ${it.title}", it.stock.toString(), Warn) }
                     r.lowMaterials.forEach { KeyValue("⚠ ${it.name}", "${num(it.stock)} ${it.unit}", Warn) }
                 }
             }
@@ -305,6 +326,7 @@ private fun summaryText(r: Report): String = buildString {
     appendLine(t("تكاليف الإنتاج: ", "Production costs: ") + money(r.productionCost))
     appendLine(t("مصاريف أخرى: ", "Other expenses: ") + money(r.expenses))
     appendLine(t("صافي الربح: ", "Net profit: ") + money(r.netProfit))
+    if (r.giftUnits > 0) appendLine(t("🎁 قوارير مهداة: ", "🎁 Bottles given: ") + r.giftUnits)
     appendLine(t("الديون على المحلات: ", "Owed by markets: ") + money(r.owedTotal))
     r.byProduct.firstOrNull()?.let { appendLine(t("الأكثر مبيعاً: ", "Best seller: ") + it.label) }
     r.byMarket.firstOrNull()?.let { appendLine(t("أفضل محل: ", "Top market: ") + it.label) }

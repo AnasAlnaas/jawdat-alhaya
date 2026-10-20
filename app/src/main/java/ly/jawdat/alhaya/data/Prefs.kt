@@ -40,10 +40,15 @@ object Prefs {
         return base.dropLast(1) + herbStage + base.last()
     }
 
-    /** The welcome tour shows once, on first launch. */
-    var seenWelcome: Boolean
-        get() = sp.getBoolean("seen_welcome", false)
-        set(v) = sp.edit().putBoolean("seen_welcome", v).apply()
+    /**
+     * The welcome tour shows on first launch, and once more after an update that changes it
+     * (raise [TOUR_VERSION]). Phones that saw the first tour have only the old "seen_welcome" flag.
+     */
+    var tourSeen: Int
+        get() = sp.getInt("tour_seen", if (sp.getBoolean("seen_welcome", false)) 1 else 0)
+        set(v) = sp.edit().putInt("tour_seen", v).apply()
+
+    const val TOUR_VERSION = 2
 
     var reminderHour: Int
         get() = sp.getInt("reminder_hour", 9)

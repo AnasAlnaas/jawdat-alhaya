@@ -8,6 +8,8 @@ import ly.jawdat.alhaya.data.ExpenseCategory
 import ly.jawdat.alhaya.data.Herb
 import ly.jawdat.alhaya.data.ItemKind
 import ly.jawdat.alhaya.data.Prefs
+import ly.jawdat.alhaya.data.Product
+import ly.jawdat.alhaya.data.ProductSize
 import ly.jawdat.alhaya.data.StageStatus
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -46,6 +48,16 @@ fun money(v: Double): String = "${ltr(num(v))} $currency"
 
 /** "Batch 2026-001" / "دفعة 2026-001". */
 val Batch.label: String get() = t("دفعة ", "Batch ") + ltr(code)
+
+/** "330 مل" / "1 لتر"; older hand-typed sizes are shown as typed. */
+fun sizeName(size: String): String = when (size) {
+    ProductSize.SMALL -> t("330 مل", "330 ml")
+    ProductSize.LARGE -> t("1 لتر", "1 L")
+    else -> size
+}
+
+/** "خل التمر بالزعتر 330 مل": the name with its bottle size, used wherever a product is listed. */
+val Product.title: String get() = "$name ${sizeName(size)}".trim()
 
 /** A number with at most 2 decimals and no trailing zeros, always with Latin digits as used in Libya. */
 fun num(v: Double): String {

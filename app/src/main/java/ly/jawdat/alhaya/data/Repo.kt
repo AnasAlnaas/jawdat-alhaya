@@ -6,6 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import ly.jawdat.alhaya.ui.title
 import java.io.File
 import java.time.LocalDate
 
@@ -394,14 +395,20 @@ object Repo {
     /**
      * Saves a sale and the money paid with it, and keeps the product's stock right.
      * [paidNow] replaces whatever was paid with this sale before (when editing).
+     *
+     * Selling more bottles than the recorded stock is allowed: the missing bottles are added to stock
+     * in the same step (and remembered in stock_added), so stock never goes below zero and deleting
+     * the sale puts stock back exactly as it was.
      */
     fun saveSale(s: Sale, paidNow: Double): Long {
         var id = s.id
         db.transaction {
             if (s.id != 0L) {
-                sale(s.id)?.let { old -> db.execSQL("UPDATE products SET stock = stock + ? WHERE id = ?", arrayOf<Any>(old.qty, old.productId)) }
+                sale(s.id)?.let { old -> db.execSQL("UPDATE products SET stock = stock + ? WHERE id = ?", arrayOf<Any>(old.bottlesOut - old.stockAdded, old.productId)) }
                 db.delete("payments", "sale_id = ?", arrayOf(s.id.toString()))
             }
+            val inStock = product(s.productId)?.stock ?: 0
+            val added = (s.bottlesOut - inStock).coerceAtLeast(0)
             id = upsert("sales", s.id, ContentValues().apply {
                 put("date", s.date.toString())
                 if (s.marketId != null) put("market_id", s.marketId) else putNull("market_id")
@@ -411,8 +418,10 @@ object Repo {
                 put("unit_price", s.unitPrice)
                 put("total", s.total)
                 put("notes", s.notes)
+                put("gift_qty", s.giftQty)
+                put("stock_added", added)
             })
-            db.execSQL("UPDATE products SET stock = stock - ? WHERE id = ?", arrayOf<Any>(s.qty, s.productId))
+            db.execSQL("UPDATE products SET stock = stock + ? WHERE id = ?", arrayOf<Any>(added - s.bottlesOut, s.productId))
             if (paidNow > 0) {
                 db.insert("payments", null, ContentValues().apply {
                     put("date", s.date.toString())
@@ -427,10 +436,11 @@ object Repo {
     }
 
     fun deleteSale(s: Sale) {
+        val saved = sale(s.id) ?: s
         db.transaction {
-            db.execSQL("UPDATE products SET stock = stock + ? WHERE id = ?", arrayOf<Any>(s.qty, s.productId))
-            db.delete("payments", "sale_id = ?", arrayOf(s.id.toString()))
-            db.delete("sales", "id = ?", arrayOf(s.id.toString()))
+            db.execSQL("UPDATE products SET stock = stock + ? WHERE id = ?", arrayOf<Any>(saved.bottlesOut - saved.stockAdded, saved.productId))
+            db.delete("payments", "sale_id = ?", arrayOf(saved.id.toString()))
+            db.delete("sales", "id = ?", arrayOf(saved.id.toString()))
         }
         changed()
     }
@@ -472,7 +482,7 @@ object Repo {
             list.forEach { s ->
                 val paid = minOf(pool, s.total).coerceAtLeast(0.0)
                 pool -= paid
-                views += SaleView(s, products[s.productId]?.name ?: "?", marketId?.let { markets[it]?.name }, paid)
+                views += SaleView(s, products[s.productId]?.title ?: "?", marketId?.let { markets[it]?.name }, paid)
             }
         }
         return views.sortedWith(compareByDescending<SaleView> { it.sale.date }.thenByDescending { it.sale.id })
@@ -578,7 +588,7 @@ private fun Cursor.output() = BatchOutput(long("id"), long("batch_id"), long("pr
 
 private fun Cursor.sale() = Sale(
     long("id"), date("date"), longOrNull("market_id"), long("product_id"), longOrNull("batch_id"),
-    int("qty"), dbl("unit_price"), dbl("total"), str("notes"),
+    int("qty"), dbl("unit_price"), dbl("total"), str("notes"), int("gift_qty"), int("stock_added"),
 )
 
 private fun Cursor.payment() = Payment(long("id"), date("date"), longOrNull("market_id"), longOrNull("sale_id"), dbl("amount"), str("notes"))

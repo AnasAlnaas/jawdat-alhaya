@@ -6,7 +6,8 @@ data class Product(
     val id: Long = 0,
     val name: String,
     val herb: String = Herb.PLAIN,
-    val size: String = "",
+    /** [ProductSize.SMALL] or [ProductSize.LARGE]; older products may still hold hand-typed text. */
+    val size: String = ProductSize.SMALL,
     val price: Double = 0.0,
     val stock: Int = 0,
     val lowStock: Int = 0,
@@ -87,7 +88,16 @@ data class Sale(
     val unitPrice: Double,
     val total: Double,
     val notes: String = "",
-)
+    /** Bottles given free: with the sale, or on their own when [qty] is 0 (a gift). */
+    val giftQty: Int = 0,
+    /** Bottles this sale added to stock because fewer were recorded than it took out. */
+    val stockAdded: Int = 0,
+) {
+    val isGiftOnly: Boolean get() = qty == 0 && giftQty > 0
+
+    /** Bottles that left stock with this sale, sold and free. */
+    val bottlesOut: Int get() = qty + giftQty
+}
 
 data class Payment(
     val id: Long = 0,
@@ -127,6 +137,13 @@ data class BatchSummary(
         ?: stages.firstOrNull { it.status == StageStatus.PENDING }
     val doneCount: Int get() = stages.count { it.status == StageStatus.DONE }
     val costPerBottle: Double? get() = if (bottles > 0) totalCost / bottles else null
+}
+
+/** The two bottle sizes, stored by their volume in ml. */
+object ProductSize {
+    const val SMALL = "330"
+    const val LARGE = "1000"
+    val all = listOf(SMALL, LARGE)
 }
 
 object BatchStatus {

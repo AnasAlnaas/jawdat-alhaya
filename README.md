@@ -48,7 +48,9 @@ To update later, open the new APK the same way; her data stays.
 | `logic/Reports.kt` | Every number on the Reports screen |
 | `reminders/` | Daily check (09:00–10:00 by default) for stages whose "check on" date has come |
 | `util/Files.kt` | QR labels, PDF report, Excel (CSV) export, backup/restore, photos |
-| `ui/Lang.kt` | Arabic/English text helper `t("عربي", "English")` |
+| `ui/Lang.kt` | Arabic/English text helper `t("عربي", "English")`, size names |
+| `ui/Motion.kt` | Drawn vinegar bottle, size and type pickers, quantity stepper, entrance/pop animations |
+| `ui/Illustrations.kt` | The animated pictures of the welcome tour |
 | `ui/screens/GuideContent.kt` | The user guide text (one section per area; ids used by the "?" buttons) |
 | `ui/screens/` | The screens |
 
@@ -58,8 +60,17 @@ To update later, open the new APK the same way; her data stays.
   market's oldest unpaid sales first.
 - Production costs are the prices typed on each stage item. Cost per bottle = batch cost ÷ bottles made.
 - Net profit for a period = sales − stage-item costs dated in the period − other expenses.
+- Bottle sizes are a fixed choice stored as ml: `330` (small) or `1000` (1 L).
+- Selling (or gifting) more bottles than the recorded stock adds the shortfall to stock in the same step; the
+  sale remembers it (`stock_added`) so editing or deleting the sale puts stock back exactly.
+- Gift bottles (`gift_qty`) leave stock but add no revenue. Their estimated cost counts in "cost of bottles"
+  and "profit on sales"; the Reports screen shows how many were given, their cost and their value at price.
 
 ## Versions
 
+- **1.2.0** (2026-10-19) — bottle size is a choice (330 ml / 1 L); add a product from inside a sale or bottling;
+  selling more than recorded stock adds the difference automatically; gift bottles (alone or with a sale) counted
+  in reports, PDF and Excel; animated welcome tour (shown once more after updating), screen transitions, drawn
+  bottles, animated charts and numbers. Database version 2.
 - **1.1.0** (2026-10-16) — in-app user guide (searchable, one section per screen, "?" button on every screen), first-launch welcome tour, user guide in the More menu.
 - **1.0.0** (2026-10-16) — first release.

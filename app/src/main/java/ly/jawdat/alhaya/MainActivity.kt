@@ -8,6 +8,13 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
@@ -58,7 +65,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        if (savedInstanceState == null && !Prefs.seenWelcome && Nav.current != Screen.Welcome) Nav.go(Screen.Welcome)
+        if (savedInstanceState == null && Prefs.tourSeen < Prefs.TOUR_VERSION && Nav.current != Screen.Welcome) Nav.go(Screen.Welcome)
         openFromIntent(intent)
         if (checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
@@ -99,31 +106,47 @@ private fun Root() {
     Column(Modifier.fillMaxSize()) {
         // With the bottom bar showing, it already keeps clear of the phone's navigation bar.
         Box(Modifier.weight(1f).then(if (showBar) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier)) {
-            when (screen) {
-                Screen.Home -> HomeScreen()
-                Screen.Batches -> BatchesScreen()
-                Screen.Sales -> SalesScreen()
-                Screen.Reports -> ReportsScreen()
-                Screen.More -> MoreScreen()
-                Screen.NewBatch -> NewBatchScreen()
-                is Screen.BatchDetail -> BatchDetailScreen(screen.id)
-                is Screen.StageDetail -> StageDetailScreen(screen.id)
-                is Screen.SaleEdit -> SaleEditScreen(screen.id, screen.marketId)
-                Screen.Markets -> MarketsScreen()
-                is Screen.MarketDetail -> MarketDetailScreen(screen.id)
-                is Screen.MarketEdit -> MarketEditScreen(screen.id)
-                Screen.Products -> ProductsScreen()
-                is Screen.ProductEdit -> ProductEditScreen(screen.id)
-                Screen.Stock -> StockScreen()
-                Screen.Expenses -> ExpensesScreen()
-                is Screen.ExpenseEdit -> ExpenseEditScreen(screen.id)
-                Screen.Settings -> SettingsScreen()
-                Screen.StageTemplate -> StageTemplateScreen()
-                is Screen.Guide -> GuideScreen(screen.section)
-                Screen.Welcome -> WelcomeScreen()
-            }
+            val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+            AnimatedContent(
+                targetState = screen,
+                transitionSpec = {
+                    // Opening a screen slides it in from the reading side; going back slides it away.
+                    val dir = Nav.direction * (if (rtl) -1 else 1)
+                    if (dir == 0) fadeIn(tween(220)) togetherWith fadeOut(tween(150))
+                    else (slideInHorizontally(tween(320)) { w -> dir * w / 3 } + fadeIn(tween(320))) togetherWith
+                        (slideOutHorizontally(tween(320)) { w -> -dir * w / 5 } + fadeOut(tween(220)))
+                },
+                label = "screen",
+            ) { s -> ScreenContent(s) }
         }
         if (showBar) BottomBar()
+    }
+}
+
+@Composable
+private fun ScreenContent(screen: Screen) {
+    when (screen) {
+        Screen.Home -> HomeScreen()
+        Screen.Batches -> BatchesScreen()
+        Screen.Sales -> SalesScreen()
+        Screen.Reports -> ReportsScreen()
+        Screen.More -> MoreScreen()
+        Screen.NewBatch -> NewBatchScreen()
+        is Screen.BatchDetail -> BatchDetailScreen(screen.id)
+        is Screen.StageDetail -> StageDetailScreen(screen.id)
+        is Screen.SaleEdit -> SaleEditScreen(screen.id, screen.marketId)
+        Screen.Markets -> MarketsScreen()
+        is Screen.MarketDetail -> MarketDetailScreen(screen.id)
+        is Screen.MarketEdit -> MarketEditScreen(screen.id)
+        Screen.Products -> ProductsScreen()
+        is Screen.ProductEdit -> ProductEditScreen(screen.id)
+        Screen.Stock -> StockScreen()
+        Screen.Expenses -> ExpensesScreen()
+        is Screen.ExpenseEdit -> ExpenseEditScreen(screen.id)
+        Screen.Settings -> SettingsScreen()
+        Screen.StageTemplate -> StageTemplateScreen()
+        is Screen.Guide -> GuideScreen(screen.section)
+        Screen.Welcome -> WelcomeScreen()
     }
 }
 

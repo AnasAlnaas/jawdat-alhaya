@@ -1,6 +1,27 @@
 package ly.jawdat.alhaya.ui.screens
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import ly.jawdat.alhaya.data.Product
+import ly.jawdat.alhaya.data.ProductSize
+import ly.jawdat.alhaya.ui.Bottle
+import ly.jawdat.alhaya.ui.Reveal
+import ly.jawdat.alhaya.ui.animatedNumber
+import ly.jawdat.alhaya.ui.sizeName
+import java.time.LocalTime
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -41,6 +62,7 @@ import ly.jawdat.alhaya.ui.pct
 import ly.jawdat.alhaya.ui.relative
 import ly.jawdat.alhaya.ui.label
 import ly.jawdat.alhaya.ui.t
+import ly.jawdat.alhaya.ui.title
 import ly.jawdat.alhaya.ui.watch
 import java.time.LocalDate
 
@@ -49,6 +71,7 @@ fun HomeScreen() {
     val week = watch { Reports.build(Period.thisWeek()) }
     val due = watch { Reminders.dueStages() }
     val summaries = watch { Repo.batchSummaries() }
+    val products = watch { Repo.products() }
     val active = summaries.filter { it.batch.status == BatchStatus.ACTIVE }
     val upcoming = active.mapNotNull { s -> s.current?.checkDate?.let { s to it } }
         .filter { it.second.isAfter(LocalDate.now()) }.sortedBy { it.second }.take(3)
@@ -61,6 +84,7 @@ fun HomeScreen() {
         },
     ) { pad ->
         ListBody(pad) {
+            item { StockHero(products) }
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     Button(onClick = { Nav.go(Screen.SaleEdit()) }, modifier = Modifier.weight(1f).height(56.dp)) {
@@ -89,7 +113,7 @@ fun HomeScreen() {
                 if (week.lowProducts.isNotEmpty() || week.lowMaterials.isNotEmpty()) item {
                     AppCard(onClick = { Nav.go(Screen.Stock) }) {
                         Text(t("مخزون منخفض", "Low stock"), style = MaterialTheme.typography.titleSmall, color = Warn)
-                        week.lowProducts.forEach { KeyValue("${it.name} ${it.size}".trim(), it.stock.toString(), Warn) }
+                        week.lowProducts.forEach { KeyValue(it.title, it.stock.toString(), Warn) }
                         week.lowMaterials.forEach { KeyValue(it.name, "${num(it.stock)} ${it.unit}", Warn) }
                     }
                 }
@@ -163,5 +187,67 @@ fun HomeScreen() {
                 }
             }
         }
+    }
+}
+
+/**
+ * The top of Home: a greeting and the bottles ready to sell, one drawn bottle per size whose level
+ * follows how many there are.
+ */
+@Composable
+private fun StockHero(products: List<Product>) {
+    val small = products.filter { it.size == ProductSize.SMALL }.sumOf { it.stock }.coerceAtLeast(0)
+    val large = products.filter { it.size == ProductSize.LARGE }.sumOf { it.stock }.coerceAtLeast(0)
+    val other = products.filter { it.size !in ProductSize.all }.sumOf { it.stock }.coerceAtLeast(0)
+    val hour = LocalTime.now().hour
+    val greeting = when (hour) {
+        in 4..11 -> t("صباح الخير", "Good morning")
+        in 12..16 -> t("نهارك سعيد", "Good afternoon")
+        else -> t("مساء الخير", "Good evening")
+    }
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Box(
+            Modifier.fillMaxWidth().background(
+                Brush.linearGradient(listOf(MaterialTheme.colorScheme.primaryContainer, MaterialTheme.colorScheme.secondaryContainer))
+            ).padding(16.dp)
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Reveal { Text(greeting + " 🌿", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onPrimaryContainer) }
+                    Reveal(delayMs = 120) {
+                        Text(
+                            t("قوارير جاهزة للبيع", "Bottles ready to sell"),
+                            style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
+                    Text(
+                        animatedNumber((small + large + other).toDouble()).toInt().toString(),
+                        style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                HeroBottle(small, large = false, label = sizeName(ProductSize.SMALL))
+                Spacer(Modifier.width(14.dp))
+                HeroBottle(large, large = true, label = sizeName(ProductSize.LARGE))
+            }
+        }
+    }
+}
+
+@Composable
+private fun HeroBottle(count: Int, large: Boolean, label: String) {
+    // 24 or more fills the bottle; fewer shows it lower, so a glance says when to bottle again.
+    val fill by animateFloatAsState((count / 24f).coerceIn(0.06f, 0.9f), tween(1200, easing = FastOutSlowInEasing), label = "fill")
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(Modifier.height(84.dp), contentAlignment = Alignment.BottomCenter) {
+            Bottle(Modifier.width(34.dp).height(if (large) 82.dp else 56.dp), fill, large)
+        }
+        Text(count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

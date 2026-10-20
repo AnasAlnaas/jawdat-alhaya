@@ -8,6 +8,7 @@ import ly.jawdat.alhaya.data.Product
 import ly.jawdat.alhaya.data.Repo
 import ly.jawdat.alhaya.data.SaleView
 import ly.jawdat.alhaya.data.StageStatus
+import ly.jawdat.alhaya.ui.title
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -56,6 +57,10 @@ data class Report(
     val avgSale: Double,
     val cashReceived: Double,
     val unpaidFromPeriod: Double,
+    // Gifts: bottles given free (with a sale or on their own)
+    val giftUnits: Int,
+    val giftCost: Double,
+    val giftValue: Double,
     // Costs & profit
     val productionCost: Double,
     val expenses: Double,
@@ -140,7 +145,9 @@ object Reports {
         val productionItems = items.filter { it.date in period }
         val productionCost = productionItems.sumOf { it.cost }
         val expenses = expensesList.sumOf { it.amount }
-        val cogs = inPeriod.sumOf { v -> v.sale.qty * (cpb[v.sale.productId] ?: 0.0) }
+        // Gifted bottles cost as much to make as sold ones, so they count in the cost of bottles that left.
+        val cogs = inPeriod.sumOf { v -> v.sale.bottlesOut * (cpb[v.sale.productId] ?: 0.0) }
+        val gifts = inPeriod.filter { it.sale.giftQty > 0 }
         val cash = Repo.payments(period.from, period.to).sumOf { it.amount }
 
         fun netOf(sales: List<SaleView>, p: Period, exp: Double): Double =
@@ -149,7 +156,8 @@ object Reports {
         val byProduct = inPeriod.groupBy { it.sale.productId }.map { (id, list) ->
             val rev = list.sumOf { it.sale.total }
             val u = list.sumOf { it.sale.qty }
-            Row(productById[id]?.name ?: "?", rev, u, rev - u * (cpb[id] ?: 0.0))
+            val out = list.sumOf { it.sale.bottlesOut }
+            Row(productById[id]?.title ?: "?", rev, u, rev - out * (cpb[id] ?: 0.0))
         }.sortedByDescending { it.value }
 
         val byMarket = inPeriod.groupBy { it.sale.marketId }.map { (id, list) ->
@@ -197,11 +205,14 @@ object Reports {
             period = period,
             revenue = revenue,
             units = units,
-            salesCount = inPeriod.size,
+            salesCount = inPeriod.count { !it.sale.isGiftOnly },
             avgUnitPrice = if (units > 0) revenue / units else 0.0,
-            avgSale = if (inPeriod.isNotEmpty()) revenue / inPeriod.size else 0.0,
+            avgSale = inPeriod.count { !it.sale.isGiftOnly }.let { n -> if (n > 0) revenue / n else 0.0 },
             cashReceived = cash,
             unpaidFromPeriod = inPeriod.sumOf { it.owed },
+            giftUnits = gifts.sumOf { it.sale.giftQty },
+            giftCost = gifts.sumOf { it.sale.giftQty * (cpb[it.sale.productId] ?: 0.0) },
+            giftValue = gifts.sumOf { v -> v.sale.giftQty * (productById[v.sale.productId]?.price ?: v.sale.unitPrice) },
             productionCost = productionCost,
             expenses = expenses,
             expensesByCategory = expensesList.groupBy { it.category }.map { (c, l) -> Row(c, l.sumOf { it.amount }) }.sortedByDescending { it.value },

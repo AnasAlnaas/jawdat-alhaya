@@ -118,7 +118,9 @@ class Db(context: Context) : SQLiteOpenHelper(context, NAME, null, VERSION) {
                 qty INTEGER NOT NULL,
                 unit_price REAL NOT NULL,
                 total REAL NOT NULL,
-                notes TEXT NOT NULL DEFAULT ''
+                notes TEXT NOT NULL DEFAULT '',
+                gift_qty INTEGER NOT NULL DEFAULT 0,
+                stock_added INTEGER NOT NULL DEFAULT 0
             )
             """,
             "CREATE INDEX sales_date ON sales(date)",
@@ -148,11 +150,19 @@ class Db(context: Context) : SQLiteOpenHelper(context, NAME, null, VERSION) {
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        // Version 1 is the first release; add migration steps here.
+        if (oldVersion < 2) {
+            // 1.2.0: bottles given free with a sale (or as a gift on their own), and the bottles a sale
+            // put into stock because there were not enough recorded, so deleting the sale can undo it.
+            db.execSQL("ALTER TABLE sales ADD COLUMN gift_qty INTEGER NOT NULL DEFAULT 0")
+            db.execSQL("ALTER TABLE sales ADD COLUMN stock_added INTEGER NOT NULL DEFAULT 0")
+            // Sizes are now a fixed choice; map the usual hand-typed ones onto it.
+            db.execSQL("UPDATE products SET size = '${ProductSize.SMALL}' WHERE replace(lower(size), ' ', '') IN ('330', '330مل', '330ml', '330ملل')")
+            db.execSQL("UPDATE products SET size = '${ProductSize.LARGE}' WHERE replace(lower(size), ' ', '') IN ('1', '1000', '1لتر', '1l', '1ل', 'لتر', '1000مل', '1000ml', '1litre', '1liter')")
+        }
     }
 
     companion object {
         const val NAME = "jawdat.db"
-        const val VERSION = 1
+        const val VERSION = 2
     }
 }

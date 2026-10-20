@@ -129,14 +129,14 @@ object Files {
         fun esc(s: String) = "\"" + s.replace("\"", "\"\"") + "\""
         val header = listOf(
             t("التاريخ", "Date"), t("المحل", "Market"), t("المنتج", "Product"), t("النوع", "Type"),
-            t("الكمية", "Qty"), t("سعر الوحدة", "Unit price"), t("الإجمالي", "Total"),
+            t("الكمية", "Qty"), t("هدية", "Gift"), t("سعر الوحدة", "Unit price"), t("الإجمالي", "Total"),
             t("المدفوع", "Paid"), t("المتبقي", "Owed"), t("ملاحظات", "Notes"),
         )
         val rows = views.map { v ->
             listOf(
                 v.sale.date.toString(), v.marketName ?: "", v.productName,
                 herbName(products[v.sale.productId]?.herb ?: ""),
-                v.sale.qty.toString(), num(v.sale.unitPrice), num(v.sale.total), num(v.paid), num(v.owed), v.sale.notes,
+                v.sale.qty.toString(), v.sale.giftQty.toString(), num(v.sale.unitPrice), num(v.sale.total), num(v.paid), num(v.owed), v.sale.notes,
             )
         }
         val csv = buildString {
@@ -169,8 +169,13 @@ object Files {
         pdf.row(t("تكاليف الإنتاج", "Production costs"), money(r.productionCost))
         pdf.row(t("مصاريف أخرى", "Other expenses"), money(r.expenses))
         pdf.row(t("صافي الربح", "Net profit"), money(r.netProfit))
-        pdf.row(t("تكلفة البضاعة المباعة (تقديري)", "Cost of bottles sold (est.)"), money(r.costOfGoodsSold))
+        pdf.row(t("تكلفة البضاعة المباعة والمهداة (تقديري)", "Cost of bottles sold & given (est.)"), money(r.costOfGoodsSold))
         pdf.row(t("الربح الإجمالي على المبيعات", "Gross profit on sales"), money(r.grossProfit))
+        if (r.giftUnits > 0) {
+            pdf.row(t("قوارير مهداة", "Bottles given as gifts"), r.giftUnits.toString())
+            pdf.row(t("تكلفة الهدايا (تقديري)", "Cost of gifts (est.)"), money(r.giftCost))
+            pdf.row(t("قيمة الهدايا بسعر البيع", "Gifts at selling price"), money(r.giftValue))
+        }
         r.productionByKind.forEach { pdf.row("  " + itemKindName(it.label), money(it.value)) }
         r.expensesByCategory.forEach { pdf.row("  " + expenseCategoryName(it.label), money(it.value)) }
 

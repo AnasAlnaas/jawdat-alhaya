@@ -55,6 +55,10 @@ import ly.jawdat.alhaya.ui.Divider
 import ly.jawdat.alhaya.ui.EmptyState
 import ly.jawdat.alhaya.ui.Field
 import ly.jawdat.alhaya.ui.FormBody
+import ly.jawdat.alhaya.ui.HerbPicker
+import ly.jawdat.alhaya.ui.QtyStepper
+import ly.jawdat.alhaya.data.ProductSize
+import ly.jawdat.alhaya.ui.title
 import ly.jawdat.alhaya.ui.Good
 import ly.jawdat.alhaya.ui.Ic
 import ly.jawdat.alhaya.ui.KeyValue
@@ -181,13 +185,13 @@ fun NewBatchScreen() {
         FormBody(pad) {
             Field(t("رقم الدفعة", "Batch number"), code, { code = it })
             Field(t("اسم أو وصف (اختياري)", "Name or note (optional)"), name, { name = it }, supporting = t("مثال: تمر دقلة 20 كجم", "e.g. Deglet dates 20 kg"))
-            PickField(t("النوع", "Type"), herbOptions, herb, { h ->
+            HerbPicker(herb) { h ->
                 herb = h
                 // Herb types get the herb-soaking stage just before bottling; plain vinegar doesn't.
                 val i = stages.indexOfFirst { it.first == Prefs.herbStage }
                 if (h != Herb.PLAIN && i < 0) stages.add((stages.size - 1).coerceAtLeast(0), Prefs.herbStage to true)
                 if (h == Herb.PLAIN && i >= 0) stages.removeAt(i)
-            })
+            }
             DateField(t("تاريخ البدء", "Start date"), start, { it?.let { d -> start = d } })
             Field(t("ملاحظات", "Notes"), notes, { notes = it }, singleLine = false)
 
@@ -336,7 +340,7 @@ fun BatchDetailScreen(id: Long) {
                     )
                     outputs.forEach { o ->
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text("${products[o.productId]?.name ?: "?"} — ${o.qty}", Modifier.weight(1f))
+                            Text("${products[o.productId]?.title ?: "?"} — ${o.qty}", Modifier.weight(1f))
                             Text(date(o.date), style = MaterialTheme.typography.bodySmall)
                             IconButton(onClick = { Repo.deleteOutput(o) }) { Ic(R.drawable.ic_delete, Modifier.size(18.dp)) }
                         }
@@ -439,16 +443,27 @@ private fun AddOutputDialog(b: Batch, onDone: () -> Unit) {
     var productId by remember { mutableStateOf(products.firstOrNull { it.herb == b.herb }?.id ?: products.firstOrNull()?.id) }
     var qty by remember { mutableStateOf("") }
     var d by remember { mutableStateOf(LocalDate.now()) }
+    var addingProduct by remember { mutableStateOf(false) }
+    if (addingProduct) {
+        QuickProductDialog(b.herb, onDone = { addingProduct = false }) { productId = it }
+        return
+    }
     AlertDialog(
         onDismissRequest = onDone,
         title = { Text(t("تسجيل قوارير منتجة", "Record bottles made")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (products.isEmpty()) {
-                    Text(t("أضف منتجاً أولاً (المزيد ← المنتجات والأسعار).", "Add a product first (More → Products & prices)."))
+                    Text(t("لا توجد منتجات بعد. أضف المنتج هنا.", "No products yet. Add the product here."))
                 } else {
-                    PickField(t("المنتج", "Product"), products.map { it.id to "${it.name} ${it.size}".trim() }, productId, { productId = it })
-                    Field(t("عدد القوارير", "Number of bottles"), qty, { qty = it.filter { c -> c.isDigit() || c in '٠'..'٩' } }, number = true)
+                    PickField(
+                        t("المنتج", "Product"), products.map { it.id to it.title }, productId, { productId = it },
+                        footer = { close -> TextButton(onClick = { close(); addingProduct = true }) { Text(t("+ منتج جديد", "+ New product")) } },
+                    )
+                    QtyStepper(
+                        t("عدد القوارير", "Number of bottles"), qty, { qty = it },
+                        large = products.firstOrNull { it.id == productId }?.size == ProductSize.LARGE,
+                    )
                     DateField(t("التاريخ", "Date"), d, { it?.let { x -> d = x } })
                 }
             }
@@ -460,7 +475,7 @@ private fun AddOutputDialog(b: Batch, onDone: () -> Unit) {
             }) { Text(t("حفظ", "Save")) }
         },
         dismissButton = {
-            if (products.isEmpty()) TextButton(onClick = { onDone(); Nav.go(Screen.ProductEdit()) }) { Text(t("إضافة منتج", "Add product")) }
+            if (products.isEmpty()) TextButton(onClick = { addingProduct = true }) { Text(t("+ منتج جديد", "+ New product")) }
             else TextButton(onClick = onDone) { Text(t("إلغاء", "Cancel")) }
         },
     )

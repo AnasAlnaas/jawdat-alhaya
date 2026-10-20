@@ -40,7 +40,7 @@ fun guideSections(): List<GuideSection> = listOf(
         t("البدء السريع", "Quick start"),
         t("خمس خطوات لتجهيز التطبيق في أول يوم:", "Five steps to set the app up on day one:"),
         steps = listOf(
-            t("المزيد ← المنتجات والأسعار: أضف كل نوع وحجم بسعره، مثل «خل التمر بالزعتر 500 مل».", "More → Products & prices: add each type and size with its price, e.g. \"Date vinegar with thyme 500 ml\"."),
+            t("المزيد ← المنتجات والأسعار: أضف كل نوع وحجم بسعره، مثل «خل التمر بالزعتر 330 مل». الحجم اختيار: 330 مل أو 1 لتر.", "More → Products & prices: add each type and size with its price, e.g. \"Date vinegar with thyme 330 ml\". The size is a choice: 330 ml or 1 L."),
             t("المزيد ← المحلات: أضف المحلات التي تبيع لها مع رقم الهاتف.", "More → Markets: add the markets you sell to, with their phone number."),
             t("عند نقع التمر اضغط «دفعة جديدة» واختر النوع.", "When you soak the dates, tap \"New batch\" and choose the type."),
             t("عند كل بيع اضغط «بيع جديد» من الرئيسية.", "For every sale, tap \"New sale\" on Home."),
@@ -118,6 +118,7 @@ fun guideSections(): List<GuideSection> = listOf(
         steps = listOf(
             t("اضغط «بيع جديد».", "Tap \"New sale\"."),
             t("اختر المحل (أو «+ محل جديد» من القائمة)، ثم المنتج. يظهر بجانبه المتوفر في المخزون.", "Choose the market (or \"+ New market\" in the list), then the product. Its stock is shown next to it."),
+            t("منتج غير موجود في القائمة؟ اختر «+ منتج جديد» من قائمة المنتجات وأضفه دون مغادرة البيع.", "Product not in the list? Choose \"+ New product\" in the product list and add it without leaving the sale."),
             t("الكمية بالزرين − و+، والسعر يُكتب تلقائياً من سعر المنتج ويمكن تغييره.", "Set the quantity with − and +; the price fills in from the product and can be changed."),
             t("الدفع: «مدفوع بالكامل»، «يدفع لاحقاً»، أو «دفع جزء» مع المبلغ المدفوع الآن.", "Payment: \"Paid in full\", \"Pays later\", or \"Paid part\" with the amount paid now."),
             t("«حفظ»، أو «حفظ وإضافة منتج آخر» لبيع عدة منتجات لنفس المحل.", "\"Save\", or \"Save & add another product\" to sell several products to the same market."),
@@ -126,6 +127,8 @@ fun guideSections(): List<GuideSection> = listOf(
             t("قائمة المبيعات: اليوم، هذا الأسبوع، هذا الشهر، غير مدفوعة، أو الكل.", "Sales list: today, this week, this month, unpaid, or all."),
             t("اضغط على أي بيع لتعديله أو حذفه (🗑). الحذف يعيد القوارير للمخزون.", "Tap any sale to edit or delete it (🗑). Deleting puts the bottles back in stock."),
             t("«يدفع لاحقاً» يحتاج اختيار محل حتى يُسجّل الدين عليه.", "\"Pays later\" needs a market so the debt is recorded against it."),
+            t("إذا بعت أكثر من المخزون المسجّل، تُضاف القوارير الناقصة إلى المخزون تلقائياً مع البيع، فلا تحتاج لتعديل المخزون أولاً.", "If you sell more than the recorded stock, the missing bottles are added to stock automatically with the sale, so there's no need to adjust stock first."),
+            t("🎁 الهدايا: اختر «هدية» أعلى شاشة البيع لقوارير مجانية، أو «قوارير هدية مع البيع» لإضافة قوارير مجانية إلى بيع. تنقص من المخزون وتُحسب تكلفتها في التقارير دون أن تُحسب كمبيعات.", "🎁 Gifts: choose \"Gift\" at the top of the sale screen for free bottles, or \"Gift bottles with this sale\" to add free bottles to a sale. They leave stock and their cost shows in reports without counting as sales."),
         ),
     ),
     GuideSection(
@@ -148,7 +151,7 @@ fun guideSections(): List<GuideSection> = listOf(
         t("المنتجات والأسعار", "Products & prices"),
         t("كل نوع وحجم منتج منفصل بسعره ومخزونه.", "Each type and size is a separate product with its own price and stock."),
         steps = listOf(
-            t("«منتج جديد»: اختر النوع فيُكتب الاسم تلقائياً، ثم الحجم والسعر.", "\"New product\": choose the type and the name fills in, then the size and price."),
+            t("«منتج جديد»: اختر النوع فيُكتب الاسم تلقائياً، ثم الحجم (قارورة صغيرة 330 مل أو كبيرة 1 لتر) والسعر.", "\"New product\": choose the type and the name fills in, then the size (small 330 ml or large 1 L bottle) and the price."),
             t("«المخزون الحالي» للقوارير الموجودة الآن، و«نبّهني عند» للتنبيه عند انخفاضه.", "\"Current stock\" for the bottles there now, and \"Warn me at\" for a low-stock alert."),
             t("«تعديل المخزون» لتصحيح العدد بعد عدّ يدوي أو قوارير مكسورة.", "\"Adjust stock\" to correct the count after a manual count or broken bottles."),
         ),
@@ -163,7 +166,7 @@ fun guideSections(): List<GuideSection> = listOf(
         t("المخزون", "Stock"),
         t("نوعان: القوارير الجاهزة للبيع، والمواد الخام والتغليف.", "Two kinds: bottles ready to sell, and raw materials & packaging."),
         steps = listOf(
-            t("القوارير الجاهزة تزيد عند التعبئة وتنقص عند البيع تلقائياً.", "Bottles ready go up when bottling and down when selling, automatically."),
+            t("القوارير الجاهزة تزيد عند التعبئة وتنقص عند البيع أو الإهداء تلقائياً. بيع أكثر من المسجّل يضيف الفرق إلى المخزون مع البيع.", "Bottles ready go up when bottling and down when selling or gifting, automatically. Selling more than recorded adds the difference to stock with the sale."),
             t("«مادة جديدة» للتمر، الأعشاب، القوارير الفارغة، الملصقات... مع الوحدة وحد التنبيه.", "\"New material\" for dates, herbs, empty bottles, labels... with a unit and a warning level."),
             t("«تعديل» لكتابة الكمية الموجودة الآن بعد الشراء أو العدّ.", "\"Adjust\" to type the amount there now, after buying or counting."),
         ),
@@ -187,6 +190,7 @@ fun guideSections(): List<GuideSection> = listOf(
             t("المبيعات: الإيرادات، القوارير، عدد عمليات البيع، متوسط السعر، والمقارنة مع الفترة السابقة.", "Sales: revenue, bottles, number of sales, average price, and the change from the previous period."),
             t("الربح: صافي الربح = المبيعات − تكاليف الإنتاج في الفترة − المصاريف.", "Profit: net profit = sales − production costs in the period − expenses."),
             t("«الربح على المبيعات» يستعمل تكلفة القارورة من الدفعات المنتهية، و«التدفق النقدي» = ما استلمته فعلاً − ما صرفته.", "\"Profit on sales\" uses the cost per bottle from finished batches; \"cash flow\" = what you actually received − what you spent."),
+            t("🎁 الهدايا: عدد القوارير المهداة في الفترة، تكلفتها التقديرية، وقيمتها بسعر البيع. تكلفتها داخلة في «الربح على المبيعات».", "🎁 Gifts: bottles given free in the period, their estimated cost and their value at selling price. Their cost is included in \"Profit on sales\"."),
             t("حسب المنتج، النوع (الأعشاب)، المحل، ويوم الأسبوع.", "By product, type (herb), market and day of the week."),
             t("«يحتاج متابعة»: منتجات لم تُبع، ومحلات لم تشترِ منذ 30 يوماً.", "\"Worth a look\": products not sold, and markets with no purchase for 30 days."),
             t("الديون، الإنتاج (مدة كل مرحلة، قوارير لكل كجم تمر)، والمخزون.", "Debts, production (time per stage, bottles per kg of dates) and stock."),
