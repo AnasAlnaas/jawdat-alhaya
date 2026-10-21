@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.size
@@ -40,13 +42,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ly.jawdat.alhaya.R
+import ly.jawdat.alhaya.data.ProductSize
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
 
 // Moving pictures for the welcome tour, drawn in code so they stay sharp and cost no image files.
 
-enum class TourArt { LOGO, PRODUCTION, SALES, GIFTS, REPORTS, BACKUP, GUIDE }
+enum class TourArt { LOGO, PRODUCTION, SALES, GIFTS, SHARE, REPORTS, BACKUP, GUIDE }
 
 @Composable
 fun TourIllustration(art: TourArt, modifier: Modifier = Modifier) {
@@ -59,6 +62,7 @@ fun TourIllustration(art: TourArt, modifier: Modifier = Modifier) {
             TourArt.REPORTS -> ReportsArt()
             TourArt.BACKUP -> BackupArt()
             TourArt.GUIDE -> GuideArt()
+            TourArt.SHARE -> ShareArt()
         }
     }
 }
@@ -151,8 +155,9 @@ private fun SalesArt() {
     val hop1 = (-sin(t * 2 * PI).coerceAtLeast(0.0) * 14).toFloat()
     val hop2 = (-sin(t * 2 * PI + PI).coerceAtLeast(0.0) * 14).toFloat()
     Box(Modifier.size(180.dp, 150.dp)) {
-        Bottle(Modifier.align(Alignment.BottomStart).offset(x = 22.dp, y = hop1.dp).width(46.dp).height(78.dp), 0.8f, large = false)
-        Bottle(Modifier.align(Alignment.BottomEnd).offset(x = (-26).dp, y = hop2.dp).width(46.dp).height(124.dp), 0.85f, large = true)
+        Bottle(Modifier.align(Alignment.BottomStart).offset(x = 14.dp, y = hop1.dp).width(30.dp).height(54.dp), 0.8f, ProductSize.TINY)
+        Bottle(Modifier.align(Alignment.BottomCenter).offset(y = hop1.dp).width(30.dp).height(84.dp), 0.85f, ProductSize.SMALL)
+        Bottle(Modifier.align(Alignment.BottomEnd).offset(x = (-14).dp, y = hop2.dp).width(38.dp).height(128.dp), 0.85f, ProductSize.LARGE)
         // A price tag on a string, swinging.
         Box(
             Modifier.align(Alignment.TopCenter).graphicsLayer {
@@ -193,7 +198,7 @@ private fun GiftsArt() {
     Halo(Leaf)
     Box(Modifier.size(170.dp), contentAlignment = Alignment.BottomCenter) {
         // The bottle sits inside and rises as the lid lifts.
-        Bottle(Modifier.offset(y = (-40 - 48 * ease).dp).width(40.dp).height(90.dp), 0.85f, large = true)
+        Bottle(Modifier.offset(y = (-40 - 48 * ease).dp).width(32.dp).height(88.dp), 0.85f, ProductSize.SMALL)
         Canvas(Modifier.fillMaxSize()) {
             val w = size.width
             val h = size.height
@@ -296,6 +301,41 @@ private fun BackupArt() {
             val y = py - p * (py - cy - 30.dp.toPx())
             val a = if (p < 0.15f) p / 0.15f else if (p > 0.8f) (1f - p) / 0.2f else 1f
             drawRoundRect(Leaf.copy(alpha = a), Offset(w / 2 - 7.dp.toPx(), y - 7.dp.toPx()), Size(14.dp.toPx(), 14.dp.toPx()), CornerRadius(3.dp.toPx()))
+        }
+    }
+}
+
+/** A benefits picture with the bottle on it, and green bubbles flying off it to be shared. */
+@Composable
+private fun ShareArt() {
+    val tr = rememberInfiniteTransition(label = "share")
+    val t by tr.animateFloat(0f, 1f, infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "t")
+    val tilt by tr.animateFloat(-4f, 4f, infiniteRepeatable(tween(1600, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "tilt")
+    Halo(Leaf)
+    Box(
+        Modifier.size(120.dp, 150.dp).graphicsLayer { rotationZ = tilt }.clip(RoundedCornerShape(14.dp)).background(Cream)
+            .padding(10.dp),
+    ) {
+        Column {
+            Box(Modifier.width(60.dp).height(8.dp).clip(RoundedCornerShape(4.dp)).background(DateBrown.copy(alpha = 0.7f)))
+            Spacer(Modifier.height(6.dp))
+            Box(Modifier.width(80.dp).height(8.dp).clip(RoundedCornerShape(4.dp)).background(Color(0xFFB8782E).copy(alpha = 0.7f)))
+            Spacer(Modifier.height(10.dp))
+            repeat(3) {
+                Box(Modifier.padding(bottom = 6.dp).width(54.dp).height(5.dp).clip(RoundedCornerShape(3.dp)).background(Color.Gray.copy(alpha = 0.35f)))
+            }
+        }
+        BottleOf(ProductSize.SMALL, 70.dp, 0.85f, Modifier.align(Alignment.BottomEnd))
+    }
+    // Message bubbles leaving the picture.
+    Canvas(Modifier.fillMaxSize()) {
+        for (i in 0 until 3) {
+            val p = (t + i / 3f) % 1f
+            val x = size.width * (0.62f + 0.28f * p)
+            val y = size.height * (0.55f - 0.45f * p)
+            val a = if (p < 0.2f) p / 0.2f else 1f - (p - 0.2f) / 0.8f
+            drawCircle(Color(0xFF25D366).copy(alpha = a), 13.dp.toPx() * (0.6f + 0.4f * p), Offset(x, y))
+            drawCircle(Color.White.copy(alpha = a), 4.dp.toPx() * (0.6f + 0.4f * p), Offset(x, y))
         }
     }
 }

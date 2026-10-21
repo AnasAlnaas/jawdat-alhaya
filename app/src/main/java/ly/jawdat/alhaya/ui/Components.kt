@@ -169,14 +169,21 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier) {
 
 /** A rounded card that slides softly into place when it appears and dips a little when pressed. */
 @Composable
-fun AppCard(onClick: (() -> Unit)? = null, color: Color? = null, content: @Composable ColumnScope.() -> Unit) {
+fun AppCard(
+    onClick: (() -> Unit)? = null,
+    color: Color? = null,
+    modifier: Modifier = Modifier,
+    /** False for cards that arrive by a shared-element transition and must not fade in again. */
+    animateIn: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     val colors = CardDefaults.cardColors(containerColor = color ?: MaterialTheme.colorScheme.surfaceContainer)
-    val appear = remember { Animatable(0f) }
+    val appear = remember { Animatable(if (animateIn) 0f else 1f) }
     LaunchedEffect(Unit) { appear.animateTo(1f, tween(380, easing = FastOutSlowInEasing)) }
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val press by animateFloatAsState(if (pressed) 0.97f else 1f, spring(dampingRatio = 0.6f), label = "press")
-    val mod = Modifier.fillMaxWidth().graphicsLayer {
+    val mod = modifier.fillMaxWidth().graphicsLayer {
         alpha = appear.value
         translationY = (1f - appear.value) * 18.dp.toPx()
         scaleX = press
@@ -409,7 +416,7 @@ fun EmptyState(text: String, hint: String? = null) {
         val bob by rememberInfiniteTransition(label = "bob").animateFloat(
             -4f, 4f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "y",
         )
-        Bottle(Modifier.width(34.dp).height(70.dp).graphicsLayer { translationY = bob.dp.toPx() }, 0.15f, large = true)
+        Bottle(Modifier.width(24.dp).height(80.dp).graphicsLayer { translationY = bob.dp.toPx() }, 0.15f, ly.jawdat.alhaya.data.ProductSize.LARGE)
         Spacer(Modifier.height(14.dp))
         Text(text, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (hint != null) {

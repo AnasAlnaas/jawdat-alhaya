@@ -98,7 +98,7 @@ fun ProductsScreen() {
                 Text(t("زر المشاركة يرسل قائمة الأسعار عبر واتساب أو تيليجرام.", "The share button sends the price list by WhatsApp or Telegram."), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             items(products, key = { it.id }) { p ->
-                AppCard(onClick = { Nav.go(Screen.ProductEdit(p.id)) }) {
+                AppCard(modifier = Modifier.animateItem(), onClick = { Nav.go(Screen.ProductEdit(p.id)) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(p.title + if (p.archived) t(" (مؤرشف)", " (archived)") else "", style = MaterialTheme.typography.titleSmall)
@@ -138,7 +138,7 @@ private fun priceList(products: List<Product>): String = buildString {
         list.forEach { appendLine("• ${it.title}" + " — " + money(it.price)) }
     }
     appendLine()
-    append(t("للطلب: 091-3390662", "To order: 091-3390662"))
+    append(t("للطلب: ", "To order: ") + Brand.PHONE)
 }
 
 private fun suggestedName(herb: String): String = when (herb) {
@@ -272,7 +272,7 @@ fun StockScreen() {
             }
             if (materials.isEmpty()) item { EmptyState(t("لا توجد مواد بعد", "No materials yet")) }
             items(materials, key = { it.id }) { m ->
-                AppCard(onClick = { editing = m }) {
+                AppCard(modifier = Modifier.animateItem(), onClick = { editing = m }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(m.name, Modifier.weight(1f), style = MaterialTheme.typography.titleSmall)
                         Badge("${num(m.stock)} ${m.unit}", if (m.stock <= m.lowLevel) Warn else Good)
@@ -370,7 +370,7 @@ fun ExpensesScreen() {
             item { StatRow(Triple(t("المجموع", "Total"), money(shown.sumOf { it.amount }), null), Triple(t("العدد", "Count"), shown.size.toString(), null)) }
             if (shown.isEmpty()) item { EmptyState(t("لا توجد مصاريف", "No expenses")) }
             items(shown, key = { it.id }) { e ->
-                AppCard(onClick = { Nav.go(Screen.ExpenseEdit(e.id)) }) {
+                AppCard(modifier = Modifier.animateItem(), onClick = { Nav.go(Screen.ExpenseEdit(e.id)) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(e.description.ifBlank { expenseCategoryName(e.category) }, style = MaterialTheme.typography.titleSmall)

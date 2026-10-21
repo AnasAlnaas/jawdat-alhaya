@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -96,18 +99,22 @@ fun SalesScreen() {
         else -> views
     }
     val gifted = shown.sumOf { it.sale.giftQty }
+    val listState = rememberLazyListState()
+    // The button shrinks to its icon once the list is scrolled.
+    val expanded by remember { derivedStateOf { listState.firstVisibleItemIndex == 0 } }
     AppScreen(
         title = t("المبيعات", "Sales"),
         help = GuideIds.SALES,
         fab = {
             ExtendedFloatingActionButton(
                 onClick = { Nav.go(Screen.SaleEdit()) },
+                expanded = expanded,
                 icon = { Ic(R.drawable.ic_add) },
                 text = { Text(t("بيع جديد", "New sale")) },
             )
         },
     ) { pad ->
-        ListBody(pad) {
+        ListBody(pad, listState) {
             item {
                 ChipRow(
                     listOf(
@@ -135,7 +142,7 @@ fun SalesScreen() {
                 )
             }
             if (shown.isEmpty()) item { EmptyState(t("لا توجد مبيعات", "No sales"), t("اضغط \"بيع جديد\" لتسجيل بيع لمحل.", "Tap \"New sale\" to record a sale to a market.")) }
-            items(shown, key = { it.sale.id }) { SaleCard(it) }
+            items(shown, key = { it.sale.id }) { Box(Modifier.animateItem()) { SaleCard(it) } }
         }
     }
 }
@@ -309,11 +316,11 @@ fun SaleEditScreen(id: Long, presetMarket: Long?) {
                 )
             }
 
-            val large = product?.size == ProductSize.LARGE
+            val bottle = product?.size ?: ProductSize.SMALL
             if (gift) {
-                QtyStepper(t("عدد القوارير المهداة", "Bottles given"), giftQty, { giftQty = it }, large = large, accent = Leaf)
+                QtyStepper(t("عدد القوارير المهداة", "Bottles given"), giftQty, { giftQty = it }, bottle = bottle, accent = Leaf)
             } else {
-                QtyStepper(t("الكمية", "Quantity"), qty, { qty = it }, large = large)
+                QtyStepper(t("الكمية", "Quantity"), qty, { qty = it }, bottle = bottle)
             }
 
             // Selling more than is recorded is fine: the missing bottles are put into stock with the sale.
@@ -346,7 +353,7 @@ fun SaleEditScreen(id: Long, presetMarket: Long?) {
                     Switch(withGift, { withGift = it })
                 }
                 AnimatedVisibility(withGift, enter = fadeIn() + expandVertically(), exit = fadeOut() + shrinkVertically()) {
-                    QtyStepper(t("قوارير مجانية", "Free bottles"), giftQty, { giftQty = it }, large = large, accent = Leaf)
+                    QtyStepper(t("قوارير مجانية", "Free bottles"), giftQty, { giftQty = it }, bottle = bottle, accent = Leaf)
                 }
 
                 AppCard(color = MaterialTheme.colorScheme.secondaryContainer) {

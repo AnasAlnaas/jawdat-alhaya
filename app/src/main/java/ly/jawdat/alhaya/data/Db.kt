@@ -59,9 +59,12 @@ class Db(context: Context) : SQLiteOpenHelper(context, NAME, null, VERSION) {
                 start_date TEXT NOT NULL,
                 status TEXT NOT NULL DEFAULT 'active',
                 finished_date TEXT,
-                notes TEXT NOT NULL DEFAULT ''
+                notes TEXT NOT NULL DEFAULT '',
+                liters REAL NOT NULL DEFAULT 0
             )
             """,
+            // Part of a batch's vinegar (in litres) mixed with a herb at the last stage.
+            BATCH_HERBS,
             """
             CREATE TABLE stages (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -159,10 +162,28 @@ class Db(context: Context) : SQLiteOpenHelper(context, NAME, null, VERSION) {
             db.execSQL("UPDATE products SET size = '${ProductSize.SMALL}' WHERE replace(lower(size), ' ', '') IN ('330', '330مل', '330ml', '330ملل')")
             db.execSQL("UPDATE products SET size = '${ProductSize.LARGE}' WHERE replace(lower(size), ' ', '') IN ('1', '1000', '1لتر', '1l', '1ل', 'لتر', '1000مل', '1000ml', '1litre', '1liter')")
         }
+        if (oldVersion < 3) {
+            // 1.3.0: batches are plain dates; herbs are added to some litres of it at the last stage.
+            db.execSQL("ALTER TABLE batches ADD COLUMN liters REAL NOT NULL DEFAULT 0")
+            db.execSQL(BATCH_HERBS.trimIndent())
+            // The new 100 ml bottle.
+            db.execSQL("UPDATE products SET size = '${ProductSize.TINY}' WHERE replace(lower(size), ' ', '') IN ('100', '100مل', '100ml', '100ملل')")
+        }
     }
 
     companion object {
         const val NAME = "jawdat.db"
-        const val VERSION = 2
+        const val VERSION = 3
+
+        private const val BATCH_HERBS = """
+            CREATE TABLE batch_herbs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                batch_id INTEGER NOT NULL REFERENCES batches(id) ON DELETE CASCADE,
+                herb TEXT NOT NULL,
+                liters REAL NOT NULL,
+                date TEXT NOT NULL,
+                notes TEXT NOT NULL DEFAULT ''
+            )
+            """
     }
 }

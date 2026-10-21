@@ -32,6 +32,7 @@ object GuideIds {
     const val BACKUP = "backup"
     const val SETTINGS = "settings"
     const val FAQ = "faq"
+    const val BENEFITS = "benefits"
 }
 
 fun guideSections(): List<GuideSection> = listOf(
@@ -40,9 +41,9 @@ fun guideSections(): List<GuideSection> = listOf(
         t("البدء السريع", "Quick start"),
         t("خمس خطوات لتجهيز التطبيق في أول يوم:", "Five steps to set the app up on day one:"),
         steps = listOf(
-            t("المزيد ← المنتجات والأسعار: أضف كل نوع وحجم بسعره، مثل «خل التمر بالزعتر 330 مل». الحجم اختيار: 330 مل أو 1 لتر.", "More → Products & prices: add each type and size with its price, e.g. \"Date vinegar with thyme 330 ml\". The size is a choice: 330 ml or 1 L."),
+            t("المزيد ← المنتجات والأسعار: أضف كل نوع وحجم بسعره، مثل «خل التمر بالزعتر 330 مل». الحجم اختيار: 100 مل أو 330 مل أو 1 لتر.", "More → Products & prices: add each type and size with its price, e.g. \"Date vinegar with thyme 330 ml\". The size is a choice: 100 ml, 330 ml or 1 L."),
             t("المزيد ← المحلات: أضف المحلات التي تبيع لها مع رقم الهاتف.", "More → Markets: add the markets you sell to, with their phone number."),
-            t("عند نقع التمر اضغط «دفعة جديدة» واختر النوع.", "When you soak the dates, tap \"New batch\" and choose the type."),
+            t("عند نقع التمر اضغط «دفعة جديدة». الدفعة تمر فقط، والأعشاب تُضاف في آخر مرحلة.", "When you soak the dates, tap \"New batch\". A batch is dates only; herbs are added at the last stage."),
             t("عند كل بيع اضغط «بيع جديد» من الرئيسية.", "For every sale, tap \"New sale\" on Home."),
             t("مرة كل أسبوع: الإعدادات ← حفظ نسخة احتياطية.", "Once a week: Settings → Save backup."),
         ),
@@ -68,10 +69,12 @@ fun guideSections(): List<GuideSection> = listOf(
         t("كل كمية تمر تُنقع معاً هي «دفعة». تتابع فيها المراحل والتكاليف حتى التعبئة.", "Each lot of dates soaked together is a \"batch\". In it you follow the stages and costs until bottling."),
         steps = listOf(
             t("اضغط «دفعة جديدة». رقم الدفعة يُكتب تلقائياً (مثل 2026-001) ويمكن تغييره.", "Tap \"New batch\". The batch number is filled in (e.g. 2026-001) and can be changed."),
-            t("اختر النوع. الأنواع بالأعشاب تُضاف لها مرحلة «نقع الأعشاب» قبل التعبئة تلقائياً.", "Choose the type. Herb types get the \"Herb soaking\" stage before bottling automatically."),
+            t("الدفعة الجديدة تمر فقط. اكتب كمية التمر بالكيلو وسعره (اختياري) فتُسجَّل في المرحلة الأولى.", "A new batch is dates only. Type the kilos of dates and their price (optional); they are recorded on the first stage."),
             t("المراحل الجاهزة: النقع ← تغيير الغطاء لغطاء قماشي ← التصفية والترقيد ← التعبئة. أزل العلامة عن أي مرحلة لا تحتاجها، أو أضف مرحلة.", "Ready stages: Soaking → Cloth cover → Filtering & settling → Bottling. Untick any you don't need, or add one."),
-            t("اضغط «بدء الدفعة». تبدأ المرحلة الأولى في تاريخ البدء.", "Tap \"Start batch\". The first stage starts on the start date."),
-            t("صفحة الدفعة تعرض: التكلفة، عدد القوارير، تكلفة القارورة، والمراحل بالترتيب.", "The batch page shows the cost, number of bottles, cost per bottle and the stages in order."),
+            t("اضغط «بدء الدفعة». تبدأ المرحلة الأولى في تاريخ البدء 🎉.", "Tap \"Start batch\". The first stage starts on the start date 🎉."),
+            t("في صفحة الدفعة اضغط «الانتقال إلى المرحلة التالية» كلما انتهت مرحلة: تنتهي الحالية وتبدأ التالية، ويمكن اختيار مرحلة أخرى أو كتابة مرحلة جديدة، ووضع موعد متابعة.", "On the batch page tap \"Move to the next stage\" whenever a stage is over: the current one ends and the next begins. You can pick another stage or type a new one, and set a check date."),
+            t("عند الوصول إلى المرحلة الأخيرة يظهر قسم «الأعشاب»: اكتب كمية الخل في الدفعة باللتر، ثم «+ إضافة أعشاب» لكل جزء، مثل 10 لتر زنجبيل و10 لتر زعتر. الباقي يبقى طبيعياً.", "At the last stage the \"Herbs\" section appears: type the litres of vinegar in the batch, then \"+ Add herbs\" for each part, e.g. 10 L ginger and 10 L thyme. The rest stays plain."),
+            t("صفحة الدفعة تعرض: المراحل على خط زمني، التكلفة، عدد القوارير، وتكلفة القارورة.", "The batch page shows the stages on a timeline, the cost, number of bottles and cost per bottle."),
         ),
         tips = listOf(
             t("زر الإعدادات ⚙ في صفحة الدفعة: تعديل البيانات، إلغاء الدفعة إذا فشلت، إعادة فتحها، أو حذفها.", "The ⚙ button on the batch page: edit details, cancel the batch if it failed, reopen it, or delete it."),
@@ -88,7 +91,7 @@ fun guideSections(): List<GuideSection> = listOf(
             t("«موعد المتابعة»: متى تتوقع أن تكون المرحلة جاهزة. أزرار ‎+3 ‎+7 ‎+14 ‎+21 ‎+30 تضيف أياماً من تاريخ البدء (للغطاء القماشي استعمل ‎+30).", "\"Check on\": when you expect the stage to be ready. The +3 +7 +14 +21 +30 buttons add days from the start date (use +30 for the cloth cover)."),
             t("مع تشغيل «تذكير في موعد المتابعة» يصلك إشعار صباح ذلك اليوم، ويتكرر كل يوم حتى تنتهي المرحلة.", "With \"Remind me\" on, a notification arrives that morning, and every day after until the stage is done."),
             t("اكتب ملاحظاتك: اللون، الرائحة، الحرارة، الرواسب...", "Write notes: colour, smell, temperature, sediment..."),
-            t("«تمت المرحلة — ابدأ التالية» ينهي هذه المرحلة ويبدأ التي بعدها بتاريخ اليوم.", "\"Stage done — start the next\" finishes this stage and starts the next one today."),
+            t("«تمت المرحلة — ابدأ التالية» ينهي هذه المرحلة ويبدأ التي بعدها بتاريخ اليوم (مثل زر «الانتقال إلى المرحلة التالية» في صفحة الدفعة).", "\"Stage done — start the next\" finishes this stage and starts the next one today (like \"Move to the next stage\" on the batch page)."),
         ),
         tips = listOf(
             t("«الكميات والتكاليف»: أضف كل ما استُخدم مع سعره الإجمالي، مثل «تمر 20 كجم = 150 د.ل». سجّل التمر بصنف «تمر» ووحدة «كجم» حتى يُحسب عدد القوارير لكل كجم.", "\"Quantities & costs\": add everything used with its total price, e.g. \"Dates 20 kg = 150 LYD\". Record dates with kind \"Dates\" and unit \"kg\" so bottles per kg can be worked out."),
@@ -103,7 +106,7 @@ fun guideSections(): List<GuideSection> = listOf(
         t("عند التعبئة تسجّلن عدد القوارير، فتدخل المخزون وتُعرف تكلفة القارورة.", "When bottling you record how many bottles, so they go into stock and the cost per bottle is known."),
         steps = listOf(
             t("في صفحة الدفعة ← «القوارير المنتجة» ← «+ تسجيل قوارير».", "On the batch page → \"Bottles made\" → \"+ Record bottles\"."),
-            t("اختر المنتج واكتب العدد. يمكن تقسيم الدفعة على أكثر من منتج أو حجم (سجّل كل واحد على حدة).", "Choose the product and type the number. A batch can be split across several products or sizes (record each one)."),
+            t("اختر المنتج واكتب العدد. يمكن تقسيم الدفعة على أكثر من منتج أو حجم (سجّل كل واحد على حدة)، مثل الطبيعي 330 مل والزنجبيل 1 لتر.", "Choose the product and type the number. A batch can be split across several products or sizes (record each one), e.g. plain 330 ml and ginger 1 L."),
             t("اضغط «إنهاء الدفعة (جاهزة للبيع)». تُعلَّم المراحل المتبقية كمنتهية.", "Tap \"Finish batch (ready to sell)\". Remaining stages are marked done."),
         ),
         tips = listOf(
@@ -221,6 +224,21 @@ fun guideSections(): List<GuideSection> = listOf(
             t("اللغة: العربية أو English.", "Language: Arabic or English."),
             t("«تعديل المراحل الافتراضية»: غيّر أسماء المراحل أو ترتيبها للدفعات الجديدة.", "\"Edit the default stages\": rename or reorder the stages for new batches."),
             t("ساعة التذكير اليومي: 7، 9، 12، 4 عصراً، أو 8 مساءً.", "Daily reminder time: 7, 9, 12, 4 pm or 8 pm."),
+        ),
+    ),
+    GuideSection(
+        GuideIds.BENEFITS, R.drawable.ic_leaf,
+        t("فوائد الخل واستخداماته", "Benefits & uses"),
+        t("بطاقات عن فوائد خل التمر وطرق استعماله، تُعرض في التطبيق وتُرسل كصور للزبائن.", "Cards about date vinegar's benefits and ways to use it, to read in the app and send to customers as pictures."),
+        steps = listOf(
+            t("المزيد ← فوائد الخل واستخداماته، أو بطاقة «فائدة اليوم» في الرئيسية.", "More → Benefits & uses, or the \"Tip of the day\" card on Home."),
+            t("اختر «الفوائد» أو «الاستخدامات» ثم اضغط بطاقة لفتحها.", "Choose \"Benefits\" or \"Uses\", then tap a card to open it."),
+            t("اسحب يميناً ويساراً للتنقل بين البطاقات.", "Swipe left and right to move between cards."),
+            t("«مشاركة كصورة» ترسل البطاقة صورةً إلى واتساب أو تيليجرام أو غيرهما. «نص» يرسلها كرسالة مكتوبة.", "\"Share as picture\" sends the card as an image to WhatsApp, Telegram or anything else. \"Text\" sends it as a written message."),
+        ),
+        tips = listOf(
+            t("كل صورة فيها الشعار ورقم الطلب ‎0913390662 وحساب jwdtalhya.", "Every picture has the logo, the order number 0913390662 and the jwdtalhya account."),
+            t("بطاقات الفوائد تحمل عبارة «محتوى توعوي ولا يغني عن استشارة مختص».", "Benefit cards carry the note \"general information, not a substitute for medical advice\"."),
         ),
     ),
     GuideSection(

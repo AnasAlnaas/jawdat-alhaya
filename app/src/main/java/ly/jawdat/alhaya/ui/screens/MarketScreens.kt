@@ -1,6 +1,7 @@
 package ly.jawdat.alhaya.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -81,7 +82,7 @@ fun MarketsScreen() {
             }
             if (markets.isEmpty()) item { EmptyState(t("لا توجد محلات بعد", "No markets yet"), t("أضف المحلات التي تبيع لها.", "Add the markets you sell to.")) }
             items(markets, key = { it.id }) { m ->
-                AppCard(onClick = { Nav.go(Screen.MarketDetail(m.id)) }) {
+                AppCard(modifier = Modifier.animateItem(), onClick = { Nav.go(Screen.MarketDetail(m.id)) }) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f)) {
                             Text(m.name + if (m.archived) t(" (مؤرشف)", " (archived)") else "", style = MaterialTheme.typography.titleSmall)
@@ -162,7 +163,7 @@ fun MarketDetailScreen(id: Long) {
 
             item { SectionTitle(t("المبيعات", "Sales")) }
             if (views.isEmpty()) item { Text(t("لا توجد مبيعات لهذا المحل بعد.", "No sales to this market yet."), color = MaterialTheme.colorScheme.onSurfaceVariant) }
-            items(views, key = { "s" + it.sale.id }) { SaleCard(it) }
+            items(views, key = { "s" + it.sale.id }) { Box(Modifier.animateItem()) { SaleCard(it) } }
 
             if (payments.isNotEmpty()) {
                 item { SectionTitle(t("الدفعات المستلمة", "Payments received")) }

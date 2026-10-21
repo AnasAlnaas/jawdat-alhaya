@@ -58,6 +58,15 @@ object Files {
         context.startActivity(Intent.createChooser(send, t("مشاركة", "Share")))
     }
 
+    /** Saves a picture (e.g. a benefits card) as PNG and opens the share sheet for it. */
+    fun shareImage(context: Context, bitmap: Bitmap, name: String) {
+        // Pictures drawn on screen may live in graphics memory; copy them into a normal bitmap first.
+        val bmp = if (bitmap.config == Bitmap.Config.HARDWARE) bitmap.copy(Bitmap.Config.ARGB_8888, false) else bitmap
+        val file = File(shareDir(context), "$name.png")
+        FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        shareFile(context, file, "image/png")
+    }
+
     fun call(context: Context, phone: String) {
         context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$phone")))
     }

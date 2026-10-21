@@ -17,7 +17,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import ly.jawdat.alhaya.data.Product
 import ly.jawdat.alhaya.data.ProductSize
-import ly.jawdat.alhaya.ui.Bottle
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.sp
+import ly.jawdat.alhaya.ui.Lang
+import ly.jawdat.alhaya.ui.shared
+import ly.jawdat.alhaya.ui.BottleOf
+import ly.jawdat.alhaya.ui.bottleScale
 import ly.jawdat.alhaya.ui.Reveal
 import ly.jawdat.alhaya.ui.animatedNumber
 import ly.jawdat.alhaya.ui.sizeName
@@ -141,6 +151,8 @@ fun HomeScreen() {
                 }
             }
 
+            item { TipOfTheDay() }
+
             item { SectionTitle(t("الوضع الآن", "Right now")) }
             item {
                 AppCard {
@@ -196,8 +208,7 @@ fun HomeScreen() {
  */
 @Composable
 private fun StockHero(products: List<Product>) {
-    val small = products.filter { it.size == ProductSize.SMALL }.sumOf { it.stock }.coerceAtLeast(0)
-    val large = products.filter { it.size == ProductSize.LARGE }.sumOf { it.stock }.coerceAtLeast(0)
+    val bySize = ProductSize.all.associateWith { size -> products.filter { it.size == size }.sumOf { it.stock }.coerceAtLeast(0) }
     val other = products.filter { it.size !in ProductSize.all }.sumOf { it.stock }.coerceAtLeast(0)
     val hour = LocalTime.now().hour
     val greeting = when (hour) {
@@ -226,28 +237,53 @@ private fun StockHero(products: List<Product>) {
                         )
                     }
                     Text(
-                        animatedNumber((small + large + other).toDouble()).toInt().toString(),
+                        animatedNumber((bySize.values.sum() + other).toDouble()).toInt().toString(),
                         style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary,
                     )
                 }
-                HeroBottle(small, large = false, label = sizeName(ProductSize.SMALL))
-                Spacer(Modifier.width(14.dp))
-                HeroBottle(large, large = true, label = sizeName(ProductSize.LARGE))
+                ProductSize.all.forEach { size ->
+                    HeroBottle(bySize[size] ?: 0, size)
+                    if (size != ProductSize.all.last()) Spacer(Modifier.width(10.dp))
+                }
             }
         }
     }
 }
 
+/** One benefit or use a day, ready to open and send to customers. */
 @Composable
-private fun HeroBottle(count: Int, large: Boolean, label: String) {
+private fun TipOfTheDay() {
+    val all = remember(Lang.arabic) {
+        benefitCards(BenefitKind.BENEFIT).mapIndexed { i, c -> Triple(BenefitKind.BENEFIT, i, c) } +
+            benefitCards(BenefitKind.USE).mapIndexed { i, c -> Triple(BenefitKind.USE, i, c) }
+    }
+    val (kind, i, c) = all[LocalDate.now().dayOfYear % all.size]
+    val wobble by rememberInfiniteTransition(label = "tip").animateFloat(
+        -6f, 6f, infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse), label = "w",
+    )
+    AppCard(onClick = { Nav.go(Screen.BenefitDetail(kind, i)) }, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.shared("benefit-$kind-$i")) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(c.emoji, fontSize = 34.sp, modifier = Modifier.graphicsLayer { rotationZ = wobble })
+            Column(Modifier.weight(1f).padding(start = 12.dp)) {
+                Text(t("فائدة اليوم", "Tip of the day"), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.secondary)
+                Text(c.title + " " + c.accent, style = MaterialTheme.typography.titleSmall)
+                Text(t("اضغط لعرضها ومشاركتها كصورة", "Tap to see it and share it as a picture"), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Ic(R.drawable.ic_share, Modifier.size(20.dp), MaterialTheme.colorScheme.secondary)
+        }
+    }
+}
+
+@Composable
+private fun HeroBottle(count: Int, size: String) {
     // 24 or more fills the bottle; fewer shows it lower, so a glance says when to bottle again.
     val fill by animateFloatAsState((count / 24f).coerceIn(0.06f, 0.9f), tween(1200, easing = FastOutSlowInEasing), label = "fill")
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(Modifier.height(84.dp), contentAlignment = Alignment.BottomCenter) {
-            Bottle(Modifier.width(34.dp).height(if (large) 82.dp else 56.dp), fill, large)
+        Box(Modifier.height(86.dp), contentAlignment = Alignment.BottomCenter) {
+            BottleOf(size, 84.dp * bottleScale(size), fill)
         }
         Text(count.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-        Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(sizeName(size), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }

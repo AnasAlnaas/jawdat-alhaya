@@ -51,6 +51,7 @@ val Batch.label: String get() = t("دفعة ", "Batch ") + ltr(code)
 
 /** "330 مل" / "1 لتر"; older hand-typed sizes are shown as typed. */
 fun sizeName(size: String): String = when (size) {
+    ProductSize.TINY -> t("100 مل", "100 ml")
     ProductSize.SMALL -> t("330 مل", "330 ml")
     ProductSize.LARGE -> t("1 لتر", "1 L")
     else -> size

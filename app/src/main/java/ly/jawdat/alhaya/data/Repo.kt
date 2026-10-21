@@ -156,6 +156,7 @@ object Repo {
                 put("start_date", batch.startDate.toString())
                 put("status", BatchStatus.ACTIVE)
                 put("notes", batch.notes)
+                put("liters", batch.liters)
             })
             stageNames.filter { it.isNotBlank() }.forEachIndexed { i, name ->
                 db.insert("stages", null, ContentValues().apply {
@@ -180,6 +181,7 @@ object Repo {
             put("status", b.status)
             put("finished_date", b.finishedDate?.toString())
             put("notes", b.notes)
+            put("liters", b.liters)
         }, "id = ?", arrayOf(b.id.toString()))
         changed()
     }
@@ -197,7 +199,8 @@ object Repo {
             .list { it.getLong(0) to it.getDouble(1) }.toMap()
         val bottles = db.rawQuery("SELECT batch_id, SUM(qty) FROM batch_outputs GROUP BY batch_id", null)
             .list { it.getLong(0) to it.getInt(1) }.toMap()
-        return batches().map { BatchSummary(it, stagesByBatch[it.id].orEmpty(), costs[it.id] ?: 0.0, bottles[it.id] ?: 0) }
+        val herbs = allBatchHerbs().groupBy { it.batchId }
+        return batches().map { BatchSummary(it, stagesByBatch[it.id].orEmpty(), costs[it.id] ?: 0.0, bottles[it.id] ?: 0, herbs[it.id].orEmpty()) }
     }
 
     fun batchSummary(id: Long): BatchSummary? = batchSummaries().firstOrNull { it.batch.id == id }
@@ -253,6 +256,29 @@ object Repo {
         changed()
     }
 
+    /**
+     * Moves a batch on by one stage: [current] (if any) is done on [date], and [next] becomes the active
+     * stage right after it, with an optional check date. [next] may be a new stage (id 0) typed by hand.
+     */
+    fun advanceStage(batchId: Long, current: Stage?, next: Stage, date: LocalDate, checkDate: LocalDate?) {
+        db.transaction {
+            current?.let { saveStage(it.copy(status = StageStatus.DONE, doneDate = date, startedDate = it.startedDate ?: date)) }
+            // The chosen stage goes straight after the current one; the others keep their order behind it.
+            val others = stages(batchId).filter { it.id != next.id || next.id == 0L }
+            val at = (current?.let { c -> others.indexOfFirst { it.id == c.id } } ?: -1) + 1
+            val ordered: MutableList<Stage?> = others.toMutableList<Stage?>().apply { add(at.coerceIn(0, size), null) }
+            ordered.forEachIndexed { i, s ->
+                when {
+                    s == null -> saveStage(
+                        next.copy(batchId = batchId, position = i, status = StageStatus.ACTIVE, startedDate = date, checkDate = checkDate, doneDate = null)
+                    )
+                    s.position != i -> saveStage(s.copy(position = i))
+                }
+            }
+        }
+        changed()
+    }
+
     fun deleteStage(id: Long) {
         stageItems(id).forEach { deleteStageItem(it) }
         photos(id).forEach { File(photosDir, it.file).delete() }
@@ -269,6 +295,29 @@ object Repo {
             saveStage(list[i].copy(position = list[j].position))
             saveStage(list[j].copy(position = list[i].position))
         }
+        changed()
+    }
+
+    // ---------- Herbs added at the last stage ----------
+
+    fun herbsForBatch(batchId: Long): List<BatchHerb> =
+        db.rawQuery("SELECT * FROM batch_herbs WHERE batch_id = ? ORDER BY id", arrayOf(batchId.toString())).list { it.batchHerb() }
+
+    fun allBatchHerbs(): List<BatchHerb> = db.rawQuery("SELECT * FROM batch_herbs ORDER BY id", null).list { it.batchHerb() }
+
+    fun saveBatchHerb(h: BatchHerb) {
+        upsert("batch_herbs", h.id, ContentValues().apply {
+            put("batch_id", h.batchId)
+            put("herb", h.herb)
+            put("liters", h.liters)
+            put("date", h.date.toString())
+            put("notes", h.notes.trim())
+        })
+        changed()
+    }
+
+    fun deleteBatchHerb(id: Long) {
+        db.delete("batch_herbs", "id = ?", arrayOf(id.toString()))
         changed()
     }
 
@@ -571,8 +620,10 @@ private fun Cursor.market() = Market(long("id"), str("name"), str("phone"), str(
 private fun Cursor.material() = Material(long("id"), str("name"), str("unit"), dbl("stock"), dbl("low_level"))
 
 private fun Cursor.batch() = Batch(
-    long("id"), str("code"), str("name"), str("herb"), date("start_date"), str("status"), dateOrNull("finished_date"), str("notes"),
+    long("id"), str("code"), str("name"), str("herb"), date("start_date"), str("status"), dateOrNull("finished_date"), str("notes"), dbl("liters"),
 )
+
+private fun Cursor.batchHerb() = BatchHerb(long("id"), long("batch_id"), str("herb"), dbl("liters"), date("date"), str("notes"))
 
 private fun Cursor.stage() = Stage(
     long("id"), long("batch_id"), int("position"), str("name"), str("status"),

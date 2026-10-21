@@ -5,16 +5,46 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.BackHandler
+import androidx.activity.BackEventCompat
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseOutCubic
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import ly.jawdat.alhaya.ui.LocalScreenAnimation
+import ly.jawdat.alhaya.ui.LocalSharedTransition
+import ly.jawdat.alhaya.ui.screens.BenefitDetailScreen
+import ly.jawdat.alhaya.ui.screens.BenefitsScreen
+import kotlin.coroutines.cancellation.CancellationException
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
@@ -98,28 +128,84 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun Root() {
     val screen = Nav.current
-    BackHandler(enabled = Nav.stack.size > 1 || Nav.stack[0] != Screen.Home) { Nav.back() }
     val showBar = Nav.stack.size == 1
+    val scope = rememberCoroutineScope()
+
+    // Swiping back from the screen edge shrinks the screen under the finger (Android's predictive
+    // back); letting go finishes the move, sliding back cancels it.
+    var dragged by remember { mutableStateOf<Screen?>(null) }
+    val drag = remember { Animatable(0f) }
+    var fromLeft by remember { mutableStateOf(true) }
+    PredictiveBackHandler(enabled = Nav.stack.size > 1 || Nav.stack[0] != Screen.Home) { events ->
+        dragged = Nav.current
+        drag.snapTo(0f)
+        try {
+            events.collect { e ->
+                fromLeft = e.swipeEdge == BackEventCompat.EDGE_LEFT
+                drag.snapTo(e.progress)
+            }
+            Nav.back(gesture = true)
+        } catch (e: CancellationException) {
+            scope.launch { drag.animateTo(0f, spring(stiffness = Spring.StiffnessMediumLow)) }
+            throw e
+        }
+    }
+    LaunchedEffect(screen) {
+        delay(500)
+        if (dragged != null && dragged != screen) {
+            dragged = null
+            drag.snapTo(0f)
+        }
+    }
+
     Column(Modifier.fillMaxSize()) {
         // With the bottom bar showing, it already keeps clear of the phone's navigation bar.
         Box(Modifier.weight(1f).then(if (showBar) Modifier.consumeWindowInsets(WindowInsets.navigationBars) else Modifier)) {
             val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-            AnimatedContent(
-                targetState = screen,
-                transitionSpec = {
-                    // Opening a screen slides it in from the reading side; going back slides it away.
-                    val dir = Nav.direction * (if (rtl) -1 else 1)
-                    if (dir == 0) fadeIn(tween(220)) togetherWith fadeOut(tween(150))
-                    else (slideInHorizontally(tween(320)) { w -> dir * w / 3 } + fadeIn(tween(320))) togetherWith
-                        (slideOutHorizontally(tween(320)) { w -> -dir * w / 5 } + fadeOut(tween(220)))
-                },
-                label = "screen",
-            ) { s -> ScreenContent(s) }
+            SharedTransitionLayout {
+                val shared = this
+                AnimatedContent(
+                    targetState = screen,
+                    transitionSpec = {
+                        // Opening a screen slides it in from the reading side; going back slides it away.
+                        val dir = Nav.direction * (if (rtl) -1 else 1)
+                        when {
+                            Nav.direction == -2 ->
+                                (fadeIn(tween(260)) + scaleIn(tween(320), initialScale = 0.96f)) togetherWith
+                                    (fadeOut(tween(200)) + scaleOut(tween(260), targetScale = 0.85f))
+                            dir == 0 ->
+                                (fadeIn(tween(240)) + scaleIn(tween(300), initialScale = 0.98f)) togetherWith fadeOut(tween(160))
+                            else ->
+                                (slideInHorizontally(tween(340, easing = EaseOutCubic)) { w -> dir * w / 3 } + fadeIn(tween(300))) togetherWith
+                                    (slideOutHorizontally(tween(340, easing = EaseOutCubic)) { w -> -dir * w / 5 } + fadeOut(tween(220)))
+                        }
+                    },
+                    label = "screen",
+                ) { s ->
+                    val anim = this
+                    CompositionLocalProvider(LocalSharedTransition provides shared, LocalScreenAnimation provides anim) {
+                        Box(
+                            Modifier.fillMaxSize().graphicsLayer {
+                                if (s == dragged) {
+                                    val p = drag.value
+                                    val k = 1f - 0.1f * p
+                                    scaleX = k
+                                    scaleY = k
+                                    translationX = (if (fromLeft) 1f else -1f) * p * 28.dp.toPx()
+                                    shape = RoundedCornerShape((32 * p).dp)
+                                    clip = p > 0f
+                                }
+                            },
+                        ) { ScreenContent(s) }
+                    }
+                }
+            }
         }
-        if (showBar) BottomBar()
+        AnimatedVisibility(showBar, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) { BottomBar() }
     }
 }
 
@@ -147,6 +233,8 @@ private fun ScreenContent(screen: Screen) {
         Screen.StageTemplate -> StageTemplateScreen()
         is Screen.Guide -> GuideScreen(screen.section)
         Screen.Welcome -> WelcomeScreen()
+        Screen.Benefits -> BenefitsScreen()
+        is Screen.BenefitDetail -> BenefitDetailScreen(screen.kind, screen.index)
     }
 }
 
@@ -161,10 +249,20 @@ private fun BottomBar() {
             Triple(Screen.Reports, R.drawable.ic_chart, t("التقارير", "Reports")),
             Triple(Screen.More, R.drawable.ic_menu, t("المزيد", "More")),
         ).forEach { (s, icon, label) ->
+            val on = root == s
+            // The chosen tab's icon hops up a little.
+            val lift by animateFloatAsState(if (on) 1f else 0f, spring(dampingRatio = 0.35f, stiffness = Spring.StiffnessMediumLow), label = "tab")
             NavigationBarItem(
-                selected = root == s,
+                selected = on,
                 onClick = { Nav.tab(s) },
-                icon = { Ic(icon) },
+                icon = {
+                    Ic(icon, Modifier.size(22.dp).graphicsLayer {
+                        val k = 1f + 0.15f * lift
+                        scaleX = k
+                        scaleY = k
+                        translationY = -3.dp.toPx() * lift
+                    })
+                },
                 label = { Text(label, maxLines = 1) },
             )
         }

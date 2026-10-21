@@ -33,6 +33,10 @@ sealed interface Screen {
     // Help
     data class Guide(val section: String? = null) : Screen
     data object Welcome : Screen
+
+    // Benefits & uses of the vinegar, to read and share as pictures
+    data object Benefits : Screen
+    data class BenefitDetail(val kind: String, val index: Int) : Screen
 }
 
 val tabs = listOf(Screen.Home, Screen.Batches, Screen.Sales, Screen.Reports, Screen.More)
@@ -43,17 +47,23 @@ object Nav {
 
     val current: Screen get() = stack.last()
 
-    /** Which way the last move went, for the screen animation: 1 forward, -1 back, 0 a tab switch. */
+    /**
+     * Which way the last move went, for the screen animation: 1 forward, -1 back, 0 a tab switch,
+     * -2 back by the swipe gesture (the screen has already shrunk under the finger).
+     */
     var direction = 0
         private set
+
+    /** A batch just created: its page opens with a celebration once. */
+    var pendingCelebration: Long? = null
 
     fun go(s: Screen) {
         direction = 1
         stack.add(s)
     }
 
-    fun back(): Boolean {
-        direction = -1
+    fun back(gesture: Boolean = false): Boolean {
+        direction = if (gesture) -2 else -1
         if (stack.size > 1) {
             stack.removeAt(stack.lastIndex)
             return true

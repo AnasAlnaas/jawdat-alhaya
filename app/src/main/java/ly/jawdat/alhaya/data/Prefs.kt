@@ -17,7 +17,7 @@ object Prefs {
 
     /**
      * Stage names a new batch starts with. Saved per language so switching language doesn't mix them.
-     * The herb-soaking stage is not part of it: it is added before the last stage for herb batches.
+     * Herbs are not a stage: they are added to some litres of the batch at its last stage.
      */
     var stageTemplate: List<String>
         get() {
@@ -31,13 +31,12 @@ object Prefs {
     // v2: the stages as she actually makes the vinegar (2026-10-16).
     private val templateKey get() = if (arabic) "stages_v2_ar" else "stages_v2_en"
 
-    val herbStage: String get() = if (arabic) "نقع الأعشاب" else "Herb soaking"
-
-    /** The stages for a new batch of this type. */
-    fun stagesFor(herb: String): List<String> {
-        val base = stageTemplate
-        if (herb == Herb.PLAIN || base.isEmpty()) return base
-        return base.dropLast(1) + herbStage + base.last()
+    /** Days until the usual check of a known stage, offered when moving on to it (0 = none). */
+    fun checkDaysFor(name: String): Int = when (name) {
+        "تغيير الغطاء لغطاء قماشي", "Cloth cover" -> 30
+        "التصفية والترقيد", "Filtering & settling" -> 5
+        "نقع الأعشاب", "Herb soaking" -> 5
+        else -> 0
     }
 
     /**
@@ -48,7 +47,7 @@ object Prefs {
         get() = sp.getInt("tour_seen", if (sp.getBoolean("seen_welcome", false)) 1 else 0)
         set(v) = sp.edit().putInt("tour_seen", v).apply()
 
-    const val TOUR_VERSION = 2
+    const val TOUR_VERSION = 3
 
     var reminderHour: Int
         get() = sp.getInt("reminder_hour", 9)

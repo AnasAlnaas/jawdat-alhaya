@@ -72,105 +72,19 @@ import ly.jawdat.alhaya.data.ProductSize
 import kotlin.math.PI
 import kotlin.math.sin
 
-// Small animated pieces shared by the screens: a drawn vinegar bottle, the bottle-size and type
+// Small animated pieces shared by the screens: the bottle-size and type
 // pickers, a quantity stepper that stacks up bottles, and a few entrance/pop helpers.
-
-/** The colour of date vinegar in the drawn bottles. */
-val Vinegar = Color(0xFFA8642A)
-private val VinegarLight = Color(0xFFD39A55)
 
 /** A dot colour for each vinegar type, used by the type picker. */
 fun herbColor(h: String): Color = when (h) {
     Herb.PLAIN -> DateBrown
     Herb.THYME -> Color(0xFF6B8E23)
     Herb.ROSEMARY -> Color(0xFF3F7A5A)
-    Herb.GINGER -> Color(0xFFD9A441)
-    Herb.GARLIC -> Color(0xFFB9A98A)
+    Herb.GINGER -> Color(0xFFC9A57A)
+    Herb.GARLIC -> Color(0xFF9E9A8C)
     Herb.FENNEL -> Color(0xFF9DBF5A)
     Herb.MIXED -> Leaf
     else -> Color(0xFF8D9387)
-}
-
-/**
- * A glass bottle drawn to fill its box, with vinegar up to [fill] (0–1). [large] draws the tall
- * 1 L shape with a long neck; otherwise the short 330 ml one. [wave] lets the surface ripple.
- */
-@Composable
-fun Bottle(
-    modifier: Modifier,
-    fill: Float,
-    large: Boolean = false,
-    wave: Boolean = true,
-    liquid: Color = Vinegar,
-) {
-    val glass = MaterialTheme.colorScheme.outline
-    val cap = MaterialTheme.colorScheme.primary
-    val phase = if (wave) {
-        val tr = rememberInfiniteTransition(label = "wave")
-        tr.animateFloat(0f, (2 * PI).toFloat(), infiniteRepeatable(tween(2200, easing = LinearEasing)), label = "phase").value
-    } else 0f
-    Canvas(modifier) {
-        val w = size.width
-        val h = size.height
-        val stroke = (w * 0.06f).coerceIn(1.2f, 6f)
-        val capH = h * 0.08f
-        val neckW = w * (if (large) 0.30f else 0.38f)
-        val shoulder = h * (if (large) 0.34f else 0.24f)
-        val bodyTop = h * (if (large) 0.48f else 0.40f)
-        val left = stroke / 2
-        val right = w - stroke / 2
-        val bottom = h - stroke / 2
-        val r = w * 0.16f
-        val cx = w / 2
-        val bottle = Path().apply {
-            moveTo(cx - neckW / 2, capH)
-            lineTo(cx - neckW / 2, shoulder)
-            cubicTo(cx - neckW / 2, bodyTop - (bodyTop - shoulder) * 0.2f, left, bodyTop - (bodyTop - shoulder) * 0.5f, left, bodyTop)
-            lineTo(left, bottom - r)
-            quadraticTo(left, bottom, left + r, bottom)
-            lineTo(right - r, bottom)
-            quadraticTo(right, bottom, right, bottom - r)
-            lineTo(right, bodyTop)
-            cubicTo(right, bodyTop - (bodyTop - shoulder) * 0.5f, cx + neckW / 2, bodyTop - (bodyTop - shoulder) * 0.2f, cx + neckW / 2, shoulder)
-            lineTo(cx + neckW / 2, capH)
-            close()
-        }
-        // Vinegar, clipped to the glass, with a gentle wave on top.
-        val f = fill.coerceIn(0f, 1f)
-        if (f > 0f) clipPath(bottle) {
-            val top = capH + h * 0.04f
-            val level = bottom - f * (bottom - top)
-            val amp = if (wave) h * 0.018f else 0f
-            val surface = Path().apply {
-                moveTo(0f, level)
-                var x = 0f
-                while (x <= w) {
-                    lineTo(x, level + amp * sin(phase + x / w * 2f * PI.toFloat()))
-                    x += w / 12f
-                }
-                lineTo(w, h)
-                lineTo(0f, h)
-                close()
-            }
-            drawPath(surface, Brush.verticalGradient(listOf(VinegarLight, liquid), startY = level, endY = h))
-        }
-        // Label band across the body.
-        val labelTop = bodyTop + (bottom - bodyTop) * 0.28f
-        val labelH = (bottom - bodyTop) * 0.34f
-        drawRoundRect(
-            Cream.copy(alpha = 0.9f), Offset(left + stroke, labelTop), Size(right - left - stroke * 2, labelH),
-            CornerRadius(labelH * 0.2f),
-        )
-        drawRect(Leaf, Offset(left + stroke, labelTop + labelH * 0.38f), Size(right - left - stroke * 2, labelH * 0.24f))
-        // Glass outline and a shine.
-        drawPath(bottle, glass, style = Stroke(stroke))
-        drawLine(
-            Color.White.copy(alpha = 0.55f), Offset(left + stroke * 2.2f, bodyTop + h * 0.04f), Offset(left + stroke * 2.2f, labelTop - h * 0.02f),
-            strokeWidth = stroke, cap = StrokeCap.Round,
-        )
-        // Cap.
-        drawRoundRect(cap, Offset(cx - neckW * 0.62f, 0f), Size(neckW * 1.24f, capH + stroke), CornerRadius(stroke))
-    }
 }
 
 /** Pops its content in with a little bounce the first time it appears. */
@@ -204,31 +118,35 @@ fun animatedNumber(target: Double, durationMs: Int = 650): Double {
 
 // ---------- Bottle size ----------
 
+/** "صغيرة" / "وسط" / "كبيرة" for the three bottles. */
+fun sizeWord(size: String): String = when (size) {
+    ProductSize.TINY -> t("صغيرة", "Small")
+    ProductSize.LARGE -> t("كبيرة", "Large")
+    else -> t("وسط", "Medium")
+}
+
 /**
- * The two bottle sizes as picture cards. A product saved before sizes were fixed may hold another
- * size ([selected] is then neither); it is kept until one of the two is chosen.
+ * The three bottle sizes as picture cards. A product saved before sizes were fixed may hold another
+ * size ([selected] is then none of them); it is kept until one is chosen.
  */
 @Composable
 fun SizePicker(selected: String, onSelect: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(t("الحجم", "Size"), style = MaterialTheme.typography.titleSmall)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            SizeCard(selected == ProductSize.SMALL, large = false, sizeName(ProductSize.SMALL), t("قارورة صغيرة", "Small bottle"), Modifier.weight(1f)) {
-                onSelect(ProductSize.SMALL)
-            }
-            SizeCard(selected == ProductSize.LARGE, large = true, sizeName(ProductSize.LARGE), t("قارورة كبيرة", "Large bottle"), Modifier.weight(1f)) {
-                onSelect(ProductSize.LARGE)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            ProductSize.all.forEach { size ->
+                SizeCard(selected == size, size, sizeName(size), sizeWord(size), Modifier.weight(1f)) { onSelect(size) }
             }
         }
         if (selected.isNotBlank() && selected !in ProductSize.all) Text(
-            t("الحجم المسجّل سابقاً: $selected — اختر أحد الحجمين.", "Size saved before: $selected — choose one of the two."),
+            t("الحجم المسجّل سابقاً: $selected — اختر أحد الأحجام.", "Size saved before: $selected — choose one of the sizes."),
             style = MaterialTheme.typography.bodySmall, color = Warn,
         )
     }
 }
 
 @Composable
-private fun SizeCard(selected: Boolean, large: Boolean, label: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
+private fun SizeCard(selected: Boolean, size: String, label: String, sub: String, modifier: Modifier, onClick: () -> Unit) {
     val scale by animateFloatAsState(if (selected) 1f else 0.95f, spring(dampingRatio = 0.45f, stiffness = Spring.StiffnessMediumLow), label = "scale")
     val fill by animateFloatAsState(if (selected) 0.82f else 0.18f, tween(900, easing = FastOutSlowInEasing), label = "fill")
     val border by animateColorAsState(if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant, label = "border")
@@ -241,12 +159,12 @@ private fun SizeCard(selected: Boolean, large: Boolean, label: String, sub: Stri
         border = BorderStroke(if (selected) 2.dp else 1.dp, border),
     ) {
         Box(Modifier.fillMaxWidth()) {
-            Column(Modifier.fillMaxWidth().padding(12.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                // Both bottles stand in the same height so the sizes compare at a glance.
-                Box(Modifier.height(96.dp), contentAlignment = Alignment.BottomCenter) {
-                    Bottle(Modifier.width(if (large) 38.dp else 40.dp).height(if (large) 94.dp else 62.dp), fill, large)
+            Column(Modifier.fillMaxWidth().padding(vertical = 12.dp, horizontal = 6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                // All bottles stand on the same line at their real relative heights.
+                Box(Modifier.height(112.dp), contentAlignment = Alignment.BottomCenter) {
+                    BottleOf(size, 110.dp * bottleScale(size), fill)
                 }
-                Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
+                Text(label, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 8.dp))
                 Text(sub, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             androidx.compose.animation.AnimatedVisibility(
@@ -267,11 +185,11 @@ private fun SizeCard(selected: Boolean, large: Boolean, label: String, sub: Stri
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun HerbPicker(selected: String, onSelect: (String) -> Unit) {
+fun HerbPicker(selected: String, options: List<String> = Herb.all, onSelect: (String) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(t("النوع", "Type"), style = MaterialTheme.typography.titleSmall)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Herb.all.forEach { h ->
+            options.forEach { h ->
                 val on = h == selected
                 val scale by animateFloatAsState(if (on) 1.06f else 1f, spring(dampingRatio = 0.4f), label = "chip")
                 val dot by animateFloatAsState(if (on) 14f else 10f, spring(dampingRatio = 0.4f), label = "dot")
@@ -299,7 +217,7 @@ fun QtyStepper(
     value: String,
     onChange: (String) -> Unit,
     min: Int = 1,
-    large: Boolean = false,
+    bottle: String = ProductSize.SMALL,
     accent: Color = MaterialTheme.colorScheme.primary,
     liquid: Color = Vinegar,
 ) {
@@ -331,23 +249,26 @@ fun QtyStepper(
                     Text("+", style = MaterialTheme.typography.headlineSmall)
                 }
             }
-            BottleRow(n, large, liquid)
+            BottleRow(n, bottle, liquid)
         }
     }
 }
 
 /** Up to 12 little bottles, then "+N". */
 @Composable
-fun BottleRow(n: Int, large: Boolean = false, liquid: Color = Vinegar) {
+fun BottleRow(n: Int, bottle: String = ProductSize.SMALL, liquid: Color = Vinegar) {
     val shown = n.coerceIn(0, 12)
     Row(
-        Modifier.fillMaxWidth().height(34.dp),
+        Modifier.fillMaxWidth().height(40.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.CenterHorizontally),
         verticalAlignment = Alignment.Bottom,
     ) {
         for (i in 0 until shown) key(i) {
             PopIn(delayMs = (i * 35).coerceAtMost(300)) {
-                Bottle(Modifier.width(13.dp).height(if (large) 32.dp else 24.dp), 0.8f, large, wave = false, liquid = liquid)
+                Bottle(
+                    Modifier.width(38.dp * bottleScale(bottle) * bottleAspect(bottle)).height(38.dp * bottleScale(bottle)),
+                    0.8f, bottle, wave = false, liquid = liquid,
+                )
             }
         }
         if (n > 12) Text(

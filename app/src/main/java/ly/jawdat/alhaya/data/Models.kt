@@ -40,6 +40,18 @@ data class Batch(
     val status: String = BatchStatus.ACTIVE,
     val finishedDate: LocalDate? = null,
     val notes: String = "",
+    /** Vinegar the batch gave, in litres (0 = not recorded yet). */
+    val liters: Double = 0.0,
+)
+
+/** Litres of a batch mixed with a herb at the last stage; the rest stays plain. */
+data class BatchHerb(
+    val id: Long = 0,
+    val batchId: Long,
+    val herb: String,
+    val liters: Double,
+    val date: LocalDate,
+    val notes: String = "",
 )
 
 data class Stage(
@@ -132,7 +144,25 @@ data class BatchSummary(
     val stages: List<Stage>,
     val totalCost: Double,
     val bottles: Int,
+    val herbs: List<BatchHerb> = emptyList(),
 ) {
+    /** The last stage in order: herbs are added here. */
+    val lastStage: Stage? get() = stages.maxByOrNull { it.position }
+
+    /** True once the batch has reached its last stage (or is finished). */
+    val atLastStage: Boolean
+        get() = batch.status != BatchStatus.ACTIVE ||
+            lastStage?.let { it.status == StageStatus.ACTIVE || it.status == StageStatus.DONE } == true
+
+    /** Stages still waiting, in order. */
+    val pending: List<Stage> get() = stages.filter { it.status == StageStatus.PENDING }.sortedBy { it.position }
+
+    val herbLiters: Double get() = herbs.sumOf { it.liters }
+
+    /** How far along the batch is, 0–1, counting the active stage as half done. */
+    val progress: Float
+        get() = if (stages.isEmpty()) 0f
+        else (doneCount + if (current?.status == StageStatus.ACTIVE) 0.5f else 0f) / stages.size
     val current: Stage? get() = stages.firstOrNull { it.status == StageStatus.ACTIVE }
         ?: stages.firstOrNull { it.status == StageStatus.PENDING }
     val doneCount: Int get() = stages.count { it.status == StageStatus.DONE }
@@ -141,9 +171,10 @@ data class BatchSummary(
 
 /** The two bottle sizes, stored by their volume in ml. */
 object ProductSize {
+    const val TINY = "100"
     const val SMALL = "330"
     const val LARGE = "1000"
-    val all = listOf(SMALL, LARGE)
+    val all = listOf(TINY, SMALL, LARGE)
 }
 
 object BatchStatus {

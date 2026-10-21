@@ -53,6 +53,7 @@ fun MoreScreen() {
                 Triple(R.drawable.ic_money, t("المنتجات والأسعار", "Products & prices"), Screen.Products),
                 Triple(R.drawable.ic_box, t("المخزون", "Stock"), Screen.Stock),
                 Triple(R.drawable.ic_chart, t("المصاريف", "Expenses"), Screen.Expenses),
+                Triple(R.drawable.ic_leaf, t("فوائد الخل واستخداماته", "Benefits & uses"), Screen.Benefits),
                 Triple(R.drawable.ic_settings, t("الإعدادات والنسخ الاحتياطي", "Settings & backup"), Screen.Settings),
                 Triple(R.drawable.ic_help, t("دليل الاستخدام", "User guide"), Screen.Guide()),
             )
@@ -156,8 +157,8 @@ fun StageTemplateScreen() {
         FormBody(pad) {
             Text(
                 t(
-                    "هذه المراحل تُضاف لكل دفعة جديدة، ولا تؤثر على الدفعات الحالية. مرحلة \"${Prefs.herbStage}\" تُضاف تلقائياً قبل الأخيرة للأنواع بالأعشاب.",
-                    "These stages are added to every new batch; existing batches don't change. \"${Prefs.herbStage}\" is added before the last stage for herb types.",
+                    "هذه المراحل تُضاف لكل دفعة جديدة، ولا تؤثر على الدفعات الحالية. الأعشاب تُضاف في المرحلة الأخيرة لجزء من الدفعة.",
+                    "These stages are added to every new batch; existing batches don't change. Herbs are added to part of the batch at its last stage.",
                 ),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

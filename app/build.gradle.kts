@@ -14,8 +14,8 @@ android {
         applicationId = "ly.jawdat.alhaya"
         minSdk = 33
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
     }
 
     // Release signing: the key and its passwords live outside git (keystore.properties is ignored).

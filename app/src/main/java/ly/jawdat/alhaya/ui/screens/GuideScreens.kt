@@ -96,6 +96,7 @@ private fun screenFor(id: String): Screen? = when (id) {
     GuideIds.EXPENSES -> Screen.Expenses
     GuideIds.REPORTS -> Screen.Reports
     GuideIds.BACKUP, GuideIds.SETTINGS -> Screen.Settings
+    GuideIds.BENEFITS -> Screen.Benefits
     else -> null
 }
 
@@ -209,16 +210,24 @@ fun WelcomeScreen() {
                 TourArt.PRODUCTION, Leaf,
                 t("الإنتاج", "Production"),
                 t(
-                    "تابع كل دفعة مرحلة بمرحلة: النقع، الغطاء القماشي، التصفية والترقيد، نقع الأعشاب، التعبئة. سجّل الكميات وأسعارها، وضع موعد متابعة ليصلك تذكير.",
-                    "Follow each batch stage by stage: soaking, cloth cover, filtering & settling, herb soaking, bottling. Record quantities and prices, and set a check date to get a reminder.",
+                    "كل دفعة تمر فقط، تنتقل من مرحلة إلى التالية بضغطة: النقع، الغطاء القماشي، التصفية والترقيد، التعبئة. في المرحلة الأخيرة أضف الأعشاب لجزء منها باللتر، مثل 10 لتر زنجبيل.",
+                    "Each batch is dates only and moves on one stage at a time: soaking, cloth cover, filtering & settling, bottling. At the last stage, add herbs to part of it by the litre, e.g. 10 L ginger.",
                 ),
             ),
             TourPage(
                 TourArt.SALES, DateBrown,
-                t("قارورتان، وبيع في ثوانٍ", "Two bottles, a sale in seconds"),
+                t("ثلاث قوارير، وبيع في ثوانٍ", "Three bottles, a sale in seconds"),
                 t(
-                    "كل منتج بحجم من اثنين: صغيرة 330 مل أو كبيرة 1 لتر. سجّل البيع: المحل، المنتج، الكمية، مدفوع أو لاحقاً. إن بعت أكثر من المسجّل يُضاف الفرق إلى المخزون تلقائياً.",
-                    "Each product comes in one of two sizes: small 330 ml or large 1 L. Record a sale: market, product, quantity, paid or later. Sell more than recorded and the difference is added to stock for you.",
+                    "كل منتج بحجم من ثلاثة: 100 مل أو 330 مل أو 1 لتر. سجّل البيع: المحل، المنتج، الكمية، مدفوع أو لاحقاً. إن بعت أكثر من المسجّل يُضاف الفرق إلى المخزون تلقائياً.",
+                    "Each product comes in one of three sizes: 100 ml, 330 ml or 1 L. Record a sale: market, product, quantity, paid or later. Sell more than recorded and the difference is added to stock for you.",
+                ),
+            ),
+            TourPage(
+                TourArt.SHARE, Leaf,
+                t("فوائد الخل كصور", "Benefits as pictures"),
+                t(
+                    "بطاقات عن فوائد خل التمر واستخداماته، بالشعار ورقم الطلب. أرسلها صوراً للزبائن على واتساب وتيليجرام من: المزيد ← فوائد الخل.",
+                    "Cards on date vinegar's benefits and uses, with the logo and order number. Send them to customers as pictures on WhatsApp and Telegram from More → Benefits & uses.",
                 ),
             ),
             TourPage(
